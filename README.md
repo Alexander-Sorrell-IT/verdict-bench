@@ -2,6 +2,20 @@
 
 **The model proposes; deterministic executed checks own the verdict.**
 
+## Headline result (World 1, 25 tasks, same model, same budget, graded in code)
+
+| Harness | Pass@1 (95% CI) | Criteria |
+|---|---|---|
+| **OmniCLI + deterministic gates (AF2)** | **100%** (25/25) | 87/87 |
+| OmniCLI, as shipped | 72% (18/25) | 63/87 |
+| Google Harness², stock | 68% (17/25) | 57/87 |
+
+AF2 vs Harness² stock: paired difference **+32%** (95% CI +16% to +52%). AF2's gates were developed on a separate
+dev world and frozen before this run. Harness² with its own improvement loop, and Mercor's APEX-Agents tasks, are
+still running. Full table, per-task matrix and caveats: [RESULTS.md](RESULTS.md).
+
+## What this is
+
 A harness-vs-harness benchmark built APEX-style: same model, same tasks, same tools, same budget,
 one fixed grader. It compares Alexander Sorrell's harness (OmniCLI) against Google's Harness²
 (stock, and after its own Propose-Probe-Compose improvement loop), on:

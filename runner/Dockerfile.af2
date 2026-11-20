@@ -1,0 +1,4 @@
+FROM ali-bench-agent:pilot
+USER root
+COPY omnicli-af2 /opt/omnicli-af2
+RUN pip install --no-cache-dir --force-reinstall --no-deps /opt/omnicli-af2

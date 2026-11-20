@@ -1,0 +1,55 @@
+diff -ruN omnicli-src/omnicli/agent.py omnicli-fixed/omnicli/agent.py
+--- omnicli-src/omnicli/agent.py	2026-11-20 00:30:11
++++ omnicli-fixed/omnicli/agent.py	2026-11-20 01:28:49
+@@ -21,6 +21,7 @@
+ """
+ 
+ from __future__ import annotations
++import os
+ 
+ import json
+ import hashlib
+@@ -412,6 +413,16 @@
+             content = message.get("content")
+             tool_calls = message.get("tool_calls", [])
+ 
++            if not tool_calls and _deliverable_missing():
++                if _NUDGES[0] < 40:
++                    _NUDGES[0] += 1
++                    if not content:
++                        messages.pop()  # drop the empty/reasoning-only reply
++                    messages.append({"role": "user", "content": (
++                        "Not finished: the required deliverable " + os.environ.get("OMNI_REQUIRED_OUTPUT", "")
++                        + " does not exist yet. Continue the task using your tools until it is written.")})
++                    self.console.print("  [yellow]gate: deliverable missing - continuing[/yellow]")
++                    continue
+             if content and not tool_calls:
+                 self.console.print("\n[bold green]Final Answer:[/bold green]")
+                 self.console.print(escape(content))
+@@ -530,3 +541,11 @@
+         return classify_family(model_id)
+     except Exception:
+         return "unknown"
++
++
++_NUDGES = [0]
++
++
++def _deliverable_missing() -> bool:
++    req = os.environ.get("OMNI_REQUIRED_OUTPUT", "").strip()
++    return bool(req) and not os.path.isfile(req)
+diff -ruN omnicli-src/omnicli/tools/core.py omnicli-fixed/omnicli/tools/core.py
+--- omnicli-src/omnicli/tools/core.py	2026-11-20 00:30:11
++++ omnicli-fixed/omnicli/tools/core.py	2026-11-20 01:28:37
+@@ -383,9 +383,9 @@
+         )
+     try:
+         try:
+-            timeout = int(timeout) if timeout not in (None, "None", "") else 30
++            timeout = int(timeout) if timeout not in (None, "None", "") else 900
+         except (ValueError, TypeError):
+-            timeout = 30
++            timeout = 900
+         res = subprocess.run(
+             command,
+             shell=True,

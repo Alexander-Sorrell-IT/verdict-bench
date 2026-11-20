@@ -1,0 +1,24 @@
+# Never commit credentials
+secrets/
+*.key
+.env
+.env.*
+# Mercor APEX-Agents data is gated and evaluation-only: fetch it, never commit it
+apex/data/
+apex/archipelago-main/
+apex-runs/
+**/world_files_zipped/
+**/task_files/
+# Generated / run artifacts (regenerable or too large)
+world/public/
+world/private/
+world-dev/
+world-runs/
+logs/
+h2-world-runs*/
+*.tar.gz
+*.zip
+*.pt
+*.pkl
+__pycache__/
+.venv*/

@@ -1,0 +1,187 @@
+{
+ "rule": "per domain, text-answer (message_in_console) tasks sorted by sha256(task_id); first 3 = dev, next 7 = test",
+ "dev": [
+  {
+   "index": 186,
+   "task_id": "task_fc96166d8f374e4eb8d4d15784904b8e",
+   "task_name": "World227_JZ_Task03",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 195,
+   "task_id": "task_9b9afdd77d4240a5bb3c13e83182b91b",
+   "task_name": "world227_tg_02",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 436,
+   "task_id": "task_2b2666310e7e4712be0f2c0e4240d5a2",
+   "task_name": "World221_TR_10",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 400,
+   "task_id": "task_e9c600e0ce46420eb983f8f1ed4d15d9",
+   "task_name": "World 420_LB_03",
+   "domain": "Law"
+  },
+  {
+   "index": 67,
+   "task_id": "task_a28445db856341ecb5c47d86e488b3d4",
+   "task_name": "World419_AH_02",
+   "domain": "Law"
+  },
+  {
+   "index": 175,
+   "task_id": "task_0dab65657186412983c2c04e363fe40e",
+   "task_name": "World425_jcf_02",
+   "domain": "Law"
+  },
+  {
+   "index": 296,
+   "task_id": "task_f33062743dc84f4abc1691a8a5f2c0ba",
+   "task_name": "World132_PM_Task07",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 134,
+   "task_id": "task_d5b4cc5e50b74ad68cca42cd737f1e9b",
+   "task_name": "SP Task 07 World 135",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 324,
+   "task_id": "task_757aca3744044e13a8b323fe623e83ca",
+   "task_name": "World 133 EL Task 05",
+   "domain": "Management Consulting"
+  }
+ ],
+ "test": [
+  {
+   "index": 200,
+   "task_id": "task_052cc6311cf34bc6bacc4f521ba77460",
+   "task_name": "World244_SK_Task04",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 117,
+   "task_id": "task_a757e127fe3a4b148dadeb34ef3540f7",
+   "task_name": "World224-HS-06",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 86,
+   "task_id": "task_d0adb2b01a094703ac75fedc1063ff98",
+   "task_name": "World225_BS_01",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 203,
+   "task_id": "task_7063e8d0a91e4e74a5b7f40952af917e",
+   "task_name": "World244_SK_Task08",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 192,
+   "task_id": "task_706f2a4dccbb4042b3aa3b770f2a54c5",
+   "task_name": "world227_tg_04",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 198,
+   "task_id": "task_761646f23fbb4a0b8564e4b348d14de1",
+   "task_name": "World244_OS_Task06",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 120,
+   "task_id": "task_9244a2b59db64d708a35fe0ae2d6c8b3",
+   "task_name": "World224_SK_Task01",
+   "domain": "Investment Banking"
+  },
+  {
+   "index": 65,
+   "task_id": "task_edcdb5ede7d64fd5a79010c3861aa468",
+   "task_name": "World419-TK-01",
+   "domain": "Law"
+  },
+  {
+   "index": 308,
+   "task_id": "task_85f48fa8ecc04d9eb5a56a6e95aa3a88",
+   "task_name": "World434_DPM_01",
+   "domain": "Law"
+  },
+  {
+   "index": 336,
+   "task_id": "task_828f11b8209f4b53bdf1e836762363d8",
+   "task_name": "World433_JS_05",
+   "domain": "Law"
+  },
+  {
+   "index": 1,
+   "task_id": "task_0097f20dd1744647a5a6e76db215a467",
+   "task_name": "World416_JS_02",
+   "domain": "Law"
+  },
+  {
+   "index": 401,
+   "task_id": "task_9e919cde8791468cadce433c3c9eef09",
+   "task_name": "World 420_LB_04",
+   "domain": "Law"
+  },
+  {
+   "index": 369,
+   "task_id": "task_08c22c6bd072423284c2da7fb190b8bd",
+   "task_name": "World418_EK_01",
+   "domain": "Law"
+  },
+  {
+   "index": 410,
+   "task_id": "task_d06f10ebd2ad4bb19ba47b00a590dd54",
+   "task_name": "World420_SF_02",
+   "domain": "Law"
+  },
+  {
+   "index": 42,
+   "task_id": "task_1dba146a5da645b3a27ea3212c0bffc4",
+   "task_name": "World_131_JR_1",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 418,
+   "task_id": "task_56364690260243039485520251995f57",
+   "task_name": "W127_AH_Task 7",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 276,
+   "task_id": "task_0c527e11cc1c436696561a15eead68b2",
+   "task_name": "World112-1_Task03_NA",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 427,
+   "task_id": "task_c50984179bb64d288e409c0f1370fdda",
+   "task_name": "World127_AM_Task03",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 280,
+   "task_id": "task_45f1d761bb464e18993968273a9a9040",
+   "task_name": "World112-1_TK_03",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 76,
+   "task_id": "task_cb7189ae4502436085b4367bf7c64169",
+   "task_name": "Task o88f1452",
+   "domain": "Management Consulting"
+  },
+  {
+   "index": 275,
+   "task_id": "task_d7893ddf035a4abca2990717ad4d7428",
+   "task_name": "World112-1_Task04_TB",
+   "domain": "Management Consulting"
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+diff -ruN omnicli-af2/omnicli/agent.py omnicli-af2-mcp/omnicli/agent.py
+--- omnicli-af2/omnicli/agent.py	2026-11-20 01:37:37
++++ omnicli-af2-mcp/omnicli/agent.py	2026-11-20 02:09:09
+@@ -37,6 +37,15 @@
+ from omnicli.client import OmniClient
+ from omnicli.config import ConfigManager
+ from omnicli.tools import TOOL_DEFINITIONS, execute_tool_call, resolve_workspace_root
++from omnicli import mcp_bridge as _mcp_bridge
++_MCP_COUNT = _mcp_bridge.install(TOOL_DEFINITIONS)
++_local_execute_tool_call = execute_tool_call
++
++
++def execute_tool_call(name, args, **kw):  # route bridged MCP tools, everything else unchanged
++    if _mcp_bridge.handles(name):
++        return _mcp_bridge.call(name, args)
++    return _local_execute_tool_call(name, args, **kw)
+ from omnicli.tools.core import check_workspace_jail
+ 
+ 
+diff -ruN omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.py
+--- omnicli-af2/omnicli/mcp_bridge.py	1969-12-31 18:00:00
++++ omnicli-af2-mcp/omnicli/mcp_bridge.py	2026-11-20 02:09:33
+@@ -0,0 +1,60 @@
++"""MCP bridge for `omni agent`: when OMNI_MCP_URL is set, the remote MCP server's tools are
++listed once (streamable HTTP), added to the agent's tool list as mcp__<name>, and every call
++is forwarded to the server. Pure transport; no task logic."""
++import asyncio, json, os, re
++
++_TOOLS = {}
++
++
++async def _with_session(fn):
++    from mcp import ClientSession
++    import mcp.client.streamable_http as sh
++    client = getattr(sh, "streamable_http_client", None) or getattr(sh, "streamablehttp_client")
++    async with client(os.environ["OMNI_MCP_URL"]) as streams:
++        if isinstance(streams, (tuple, list)):
++            r, w = streams[0], streams[1]
++        else:
++            r = getattr(streams, "read_stream", None) or getattr(streams, "read")
++            w = getattr(streams, "write_stream", None) or getattr(streams, "write")
++        async with ClientSession(r, w) as s:
++            await s.initialize()
++            return await fn(s)
++
++
++def _safe(name):
++    return ("mcp__" + re.sub(r"[^A-Za-z0-9_-]", "_", name))[:64]
++
++
++def install(tool_definitions: list) -> int:
++    if not os.environ.get("OMNI_MCP_URL"):
++        return 0
++    async def lst(s):
++        out, cur = [], None
++        while True:
++            res = await s.list_tools(cursor=cur) if cur else await s.list_tools()
++            out += res.tools
++            cur = getattr(res, "nextCursor", None)
++            if not cur:
++                return out
++    for t in asyncio.run(_with_session(lst)):
++        n = _safe(t.name)
++        _TOOLS[n] = t.name
++        tool_definitions.append({"type": "function", "function": {
++            "name": n, "description": (t.description or "")[:1000],
++            "parameters": t.inputSchema or {"type": "object", "properties": {}}}})
++    return len(_TOOLS)
++
++
++def handles(name: str) -> bool:
++    return name in _TOOLS
++
++
++def call(name: str, args: dict) -> str:
++    async def c(s):
++        res = await s.call_tool(_TOOLS[name], args or {})
++        parts = []
++        for item in res.content or []:
++            parts.append(getattr(item, "text", None) or json.dumps(item.model_dump(), default=str)[:20000])
++        txt = "\n".join(parts)
++        return ("ERROR: " if getattr(res, "isError", False) else "") + txt[:60000]
++    return asyncio.run(_with_session(c))

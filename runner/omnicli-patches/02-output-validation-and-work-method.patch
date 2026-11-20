@@ -1,0 +1,65 @@
+diff -ruN omnicli-fixed/omnicli/agent.py omnicli-af2/omnicli/agent.py
+--- omnicli-fixed/omnicli/agent.py	2026-11-20 01:28:49
++++ omnicli-af2/omnicli/agent.py	2026-11-20 01:37:37
+@@ -303,6 +303,18 @@
+                 "Cite local code as path:line and report files changed."
+             )
+ 
++        system_prompt += (
++            "\n\nWORK METHOD (enforced by the harness):\n"
++            "1. Inspect the inputs briefly (headers, a few rows, one sample of each file type) - never read "
++            "dozens of files one at a time.\n"
++            "2. Write ONE script (python) under scratch/ that loads every relevant file and computes the "
++            "answer programmatically, exactly per the task's stated rules.\n"
++            "3. Run it with bash. Print intermediate counts and spot-check a few items against the raw files.\n"
++            "4. Have the script write the deliverable with json.dump using the exact keys the task specifies.\n"
++            "5. Re-read the deliverable and confirm it matches the required shape before you finish.\n"
++            "Never narrate a plan without acting: every reply should call a tool until the deliverable is "
++            "written and checked."
++        )
+         # Layer per-provider memory (context files) on top of the system prompt.
+         try:
+             from omnicli.memory import load_memory
+@@ -419,9 +431,9 @@
+                     if not content:
+                         messages.pop()  # drop the empty/reasoning-only reply
+                     messages.append({"role": "user", "content": (
+-                        "Not finished: the required deliverable " + os.environ.get("OMNI_REQUIRED_OUTPUT", "")
+-                        + " does not exist yet. Continue the task using your tools until it is written.")})
+-                    self.console.print("  [yellow]gate: deliverable missing - continuing[/yellow]")
++                        "Not finished: " + _deliverable_problem()
++                        + ". Continue the task using your tools until the deliverable is written and valid.")})
++                    self.console.print("  [yellow]gate: deliverable missing/invalid - continuing[/yellow]")
+                     continue
+             if content and not tool_calls:
+                 self.console.print("\n[bold green]Final Answer:[/bold green]")
+@@ -546,6 +558,27 @@
+ _NUDGES = [0]
+ 
+ 
+-def _deliverable_missing() -> bool:
++def _deliverable_problem() -> str:
+     req = os.environ.get("OMNI_REQUIRED_OUTPUT", "").strip()
+-    return bool(req) and not os.path.isfile(req)
++    if not req:
++        return ""
++    if not os.path.isfile(req):
++        return f"the required deliverable {req} does not exist yet"
++    keys = [k for k in os.environ.get("OMNI_REQUIRED_KEYS", "").split(",") if k]
++    if req.endswith(".json"):
++        import json as _json
++        try:
++            data = _json.load(open(req))
++        except Exception as e:
++            return f"{req} is not valid JSON ({type(e).__name__}: {e})"
++        if keys:
++            if not isinstance(data, dict):
++                return f"{req} must be a JSON object with keys {keys}"
++            miss = [k for k in keys if k not in data]
++            if miss:
++                return f"{req} is missing required keys {miss}"
++    return ""
++
++
++def _deliverable_missing() -> bool:
++    return bool(_deliverable_problem())

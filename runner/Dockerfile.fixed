@@ -1,0 +1,4 @@
+FROM ali-bench-agent:pilot
+USER root
+COPY omnicli-fixed /opt/omnicli-fixed
+RUN pip install --no-cache-dir --force-reinstall --no-deps /opt/omnicli-fixed

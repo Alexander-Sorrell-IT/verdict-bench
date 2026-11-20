@@ -83,6 +83,15 @@ def main():
           "separate dev world (different seed); this world (the test world) was frozen by hash before any arm ran and never used for tuning.",
           "- **Harness² arms:** B is Harness²'s own stock base harness on OpenCode 1.14.18 (its pinned version); C runs Harness²'s own "
           "`run_domain` Propose-Probe-Compose loop with the same model as executor and editor (its default).",
+          "- **What AF2's result does and does not show.** AF2 was tuned only on the dev world (different seed and data, same 25 "
+          "task types), then frozen (image id in the change log) before touching this world. So it shows the gates generalise to "
+          "unseen data for known task types; it does not yet show generalisation to new task types (that needs a fresh world "
+          "and the APEX test split).",
+          "- **Provenance of each OmniCLI change.** The first change (AF: completion gate + 900 s shell default) was made after "
+          "observing as-shipped OmniCLI fail on this world. Every later change (output-validation gate, script-first method, "
+          "600 s model-call timeout, read-streak gate) was developed on the dev world only.",
+          "- **Load matching.** AF2's test run used the same concurrency as A/B (Harness² loop stream 2 paused); relay median "
+          "latency was 15.1 s during A/B and 14.8 s just before AF2.",
           "- **Still running when generated:** any arm with fewer than 25 tasks scored. This file is regenerated as results land.", ""]
     Path(a.out).expanduser().write_text("\n".join(L) + "\n")
     print("\n".join(L[:20]))

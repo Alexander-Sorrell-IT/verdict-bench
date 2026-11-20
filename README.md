@@ -35,7 +35,7 @@ one fixed grader. It compares Alexander Sorrell's harness (OmniCLI) against Goog
 ## OmniCLI variants (patches in `runner/omnicli-patches/`)
 - **A**: OmniCLI as shipped.
 - **AF**: + completion gate (a run can't end until the deliverable exists) + 900 s shell default.
-- **AF2**: + output-validation gate (the deliverable must parse and carry the task's schema keys) + script-first work method.
+- **AF2**: + output-validation gate (the deliverable must parse and carry the task's schema keys) + script-first work method + 600 s model-call timeout + read-streak gate (after 4 consecutive single-file reads, the harness tells the model to switch to one script).
 - **AF2-MCP**: + MCP bridge (streamable HTTP) so OmniCLI can use APEX's apps.
 
 ## Reproduce World 1

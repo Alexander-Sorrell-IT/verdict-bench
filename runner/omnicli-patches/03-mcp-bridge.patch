@@ -1,6 +1,6 @@
-diff -ruN omnicli-af2/omnicli/agent.py omnicli-af2-mcp/omnicli/agent.py
---- omnicli-af2/omnicli/agent.py	2026-11-20 01:37:37
-+++ omnicli-af2-mcp/omnicli/agent.py	2026-11-20 02:09:09
+diff -ruN -x __pycache__ omnicli-af2/omnicli/agent.py omnicli-af2-mcp/omnicli/agent.py
+--- omnicli-af2/omnicli/agent.py	2026-11-20 05:08:30
++++ omnicli-af2-mcp/omnicli/agent.py	2026-11-20 05:08:30
 @@ -37,6 +37,15 @@
  from omnicli.client import OmniClient
  from omnicli.config import ConfigManager
@@ -17,10 +17,10 @@ diff -ruN omnicli-af2/omnicli/agent.py omnicli-af2-mcp/omnicli/agent.py
  from omnicli.tools.core import check_workspace_jail
  
  
-diff -ruN omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.py
+diff -ruN -x __pycache__ omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.py
 --- omnicli-af2/omnicli/mcp_bridge.py	1969-12-31 18:00:00
-+++ omnicli-af2-mcp/omnicli/mcp_bridge.py	2026-11-20 02:09:33
-@@ -0,0 +1,60 @@
++++ omnicli-af2-mcp/omnicli/mcp_bridge.py	2026-11-20 04:17:56
+@@ -0,0 +1,61 @@
 +"""MCP bridge for `omni agent`: when OMNI_MCP_URL is set, the remote MCP server's tools are
 +listed once (streamable HTTP), added to the agent's tool list as mcp__<name>, and every call
 +is forwarded to the server. Pure transport; no task logic."""
@@ -56,7 +56,7 @@ diff -ruN omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.p
 +        while True:
 +            res = await s.list_tools(cursor=cur) if cur else await s.list_tools()
 +            out += res.tools
-+            cur = getattr(res, "nextCursor", None)
++            cur = getattr(res, "next_cursor", None) or getattr(res, "nextCursor", None)
 +            if not cur:
 +                return out
 +    for t in asyncio.run(_with_session(lst)):
@@ -64,7 +64,7 @@ diff -ruN omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.p
 +        _TOOLS[n] = t.name
 +        tool_definitions.append({"type": "function", "function": {
 +            "name": n, "description": (t.description or "")[:1000],
-+            "parameters": t.inputSchema or {"type": "object", "properties": {}}}})
++            "parameters": (getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {"type": "object", "properties": {}})}})
 +    return len(_TOOLS)
 +
 +
@@ -79,5 +79,6 @@ diff -ruN omnicli-af2/omnicli/mcp_bridge.py omnicli-af2-mcp/omnicli/mcp_bridge.p
 +        for item in res.content or []:
 +            parts.append(getattr(item, "text", None) or json.dumps(item.model_dump(), default=str)[:20000])
 +        txt = "\n".join(parts)
-+        return ("ERROR: " if getattr(res, "isError", False) else "") + txt[:60000]
++        err = getattr(res, "is_error", None) or getattr(res, "isError", False)
++        return ("ERROR: " if err else "") + txt[:60000]
 +    return asyncio.run(_with_session(c))

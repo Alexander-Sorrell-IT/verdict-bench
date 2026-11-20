@@ -1,6 +1,15 @@
-diff -ruN omnicli-fixed/omnicli/agent.py omnicli-af2/omnicli/agent.py
+diff -ruN -x __pycache__ omnicli-fixed/omnicli/agent.py omnicli-af2/omnicli/agent.py
 --- omnicli-fixed/omnicli/agent.py	2026-11-20 01:28:49
-+++ omnicli-af2/omnicli/agent.py	2026-11-20 01:37:37
++++ omnicli-af2/omnicli/agent.py	2026-11-20 05:08:30
+@@ -99,7 +99,7 @@
+     model: str,
+     messages: List[Dict[str, Any]],
+     tools: List[Dict[str, Any]],
+-    timeout: float = 90.0,
++    timeout: float = float(os.environ.get("OMNI_MODEL_TIMEOUT", "600")),
+ ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+     """Single tool-calling model call. Returns (data, None) or (None, error).
+ 
 @@ -303,6 +303,18 @@
                  "Cite local code as path:line and report files changed."
              )
@@ -33,7 +42,16 @@ diff -ruN omnicli-fixed/omnicli/agent.py omnicli-af2/omnicli/agent.py
                      continue
              if content and not tool_calls:
                  self.console.print("\n[bold green]Final Answer:[/bold green]")
-@@ -546,6 +558,27 @@
+@@ -472,7 +484,7 @@
+                         dispatch_error = None
+                     else:
+                         try:
+-                            output = execute_tool_call(
++                            output = _gated_execute(
+                                 name, args, client_ref=self.client,
+                                 allow_shell=getattr(self, "allow_shell", False),
+                                 allow_local=getattr(self, "allow_local", False),
+@@ -546,6 +558,46 @@
  _NUDGES = [0]
  
  
@@ -63,3 +81,22 @@ diff -ruN omnicli-fixed/omnicli/agent.py omnicli-af2/omnicli/agent.py
 +
 +def _deliverable_missing() -> bool:
 +    return bool(_deliverable_problem())
++
++_READ_STREAK = [0]
++
++
++def _read_streak_gate(name, output):
++    """Deterministic: after 8 consecutive single-file reads, tell the model to switch to one script."""
++    if name == "read_file":
++        _READ_STREAK[0] += 1
++        if _READ_STREAK[0] >= 4 and _READ_STREAK[0] % 2 == 0:
++            return (str(output) + f"\n\n[harness gate] You have read {_READ_STREAK[0]} files one at a time. Stop "
++                    "reading individually: write ONE python script under scratch/ that loads every relevant file "
++                    "programmatically and computes the answer, run it with bash, then write the deliverable.")
++    else:
++        _READ_STREAK[0] = 0
++    return output
++
++
++def _gated_execute(name, args, **kw):
++    return _read_streak_gate(name, execute_tool_call(name, args, **kw))

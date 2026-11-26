@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+# Leaked-at-root run artifacts: these belong in results/<arm>/ or world/world_files/
+/*.log
+/*.conf
+/*.bin
+/discovery.md
+/verification_report.md
+/grading_report.md
+/solution_*.py
+
+# Run artifacts (regenerable)
+world/discovery.md
+results/*/discovery.md
+world_manifest_3.json
+
+# operator-mode secrets: never commit
+keys.toml
+secrets/

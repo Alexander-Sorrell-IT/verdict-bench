@@ -1,0 +1,60 @@
+{
+  "_comment": "Provider registry for operator mode. Any OpenAI-COMPATIBLE endpoint works with runner/relay.py unchanged. NEVER put a key in this file - keys live in secrets/<provider>.key (gitignored) or the named env var.",
+  "_relay_usage": "python runner/relay.py --upstream <base_url> --key-file secrets/<provider>.key --rpm <rpm>",
+  "providers": {
+    "nvidia": {
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "env_var": "NVIDIA_API_KEY",
+      "key_file": "secrets/nvidia.key",
+      "rpm": 35,
+      "notes": "Free tier. Quota = HTTP 429; throttle below your quota or the run degrades silently. The arm used by the World-1 head-to-head per RESULTS.md."
+    },
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "env_var": "OPENROUTER_API_KEY",
+      "key_file": "secrets/openrouter.key",
+      "rpm": 60,
+      "notes": "One key, many models. Free tier is rate-limited; record model id exactly - aliases move."
+    },
+    "groq": {
+      "base_url": "https://api.groq.com/openai/v1",
+      "env_var": "GROQ_API_KEY",
+      "key_file": "secrets/groq.key",
+      "rpm": 30,
+      "notes": "Free tier, very fast, small context on some models."
+    },
+    "gemini": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "env_var": "GEMINI_API_KEY",
+      "key_file": "secrets/gemini.key",
+      "rpm": 60,
+      "notes": "OpenAI-compatible endpoint. The NATIVE API is not compatible - use this base_url or write an adapter."
+    },
+    "anthropic": {
+      "base_url": "https://api.anthropic.com/v1",
+      "env_var": "ANTHROPIC_API_KEY",
+      "key_file": "secrets/anthropic.key",
+      "rpm": 50,
+      "notes": "OpenAI-compatibility is partial. Verify tool-calling behaves before trusting a run."
+    },
+    "together": {
+      "base_url": "https://api.together.xyz/v1",
+      "env_var": "TOGETHER_API_KEY",
+      "key_file": "secrets/together.key",
+      "rpm": 60
+    },
+    "fireworks": {
+      "base_url": "https://api.fireworks.ai/inference/v1",
+      "env_var": "FIREWORKS_API_KEY",
+      "key_file": "secrets/fireworks.key",
+      "rpm": 60
+    },
+    "ollama": {
+      "base_url": "http://127.0.0.1:11434/v1",
+      "env_var": null,
+      "key_file": null,
+      "rpm": 100000,
+      "notes": "Local, unlimited floor. Not comparable to a hosted arm unless BOTH arms use it - see the parity invariant."
+    }
+  }
+}

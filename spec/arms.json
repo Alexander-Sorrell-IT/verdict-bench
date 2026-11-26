@@ -1,0 +1,12 @@
+{
+  "_comment": "Arms spec for verdict-bench. Every arm shares ONE Budget - parity is structural, not a promise. Arm entrypoints are in-repo harness modules; the benchmark never shells out to an external agent.",
+  "budget": {
+    "max_steps": 400,
+    "max_model_calls": 200,
+    "max_wall_seconds": 2700.0
+  },
+  "arms": {
+    "MINIMAL": "harness.minimal_arm:run",
+    "GATED": "harness.minimal_arm:run_gated"
+  }
+}

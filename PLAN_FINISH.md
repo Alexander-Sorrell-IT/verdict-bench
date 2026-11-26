@@ -14,8 +14,8 @@ clean shell. A step that cannot pass its verify is a bug report, not a bug worka
 
 | Claim | Verified state |
 |---|---|
-| Item 5 gates | **EXIST**, `world/gates.py` 277 lines, 12 tests, `5c57c71`. Live: exit 1, 63/64 passed, BLOCKING `manifest:no-leaked-keys ['families']` |
-| Item 5 world rewrite | **NOT DONE**: gold + freeze write inside `world/`; manifest carries `families` + per-task `family`; `independent_solver()` ends at `solved = False  # placeholder` (`build_world.py:300`); dead `_generate_gold_answer` at line 153 |
+| Item 5 gates | **EXIST**, `world/gates.py`, 12 tests, `5c57c71`. Live on the rebuilt world (post-A.1): exit 0, **64/64 passed**. Solver gates skip until A.2 lands `world/independent_solver.py` |
+| Item 5 world rewrite | **A.1 DONE, `ef21429`**: gold + freeze now `world/private/` via the new `world/paths.py` (PUBLIC_ROOT vs PRIVATE_ROOT); manifest carries neither `families` nor `family`; dead `_generate_gold_answer` and the `solved = False` stub removed (real solver is A.2); `world_manifest_3.json` (claims 25 tasks, holds 3) deleted. Remaining: A.2 solver, A.3 gate-tree scan + `family` in LEAKY_KEYS, A.4 wiring, A.5 overlap test, A.6 leakage guard |
 | Gates wired into run path | **NO** — zero callers of `check_world` in `runner/`, `harness/`, `score/` |
 | `score/` | **DOES NOT EXIST** — item 7 starts from zero |
 | `apex/` | **EMPTY DIR** — `SPLIT.json` + `run_apex.py` not yet ported |
@@ -29,8 +29,15 @@ clean shell. A step that cannot pass its verify is a bug report, not a bug worka
 | Harness² | `harness2_adapter.py` at repo root |
 | Test suite | 92 passing, must run `-p no:hypothesispytest` (hypothesis 6.148.8 plugin crashes in terminal summary, post-run) |
 
-**What the World-1 evidence can and cannot support:**
-- CAN: offline re-verification of the 18/25 vs 17/25 summary from the recorded jsonl via `stats.py` (attempts are committed).
+**What the World-1 evidence can and cannot support** (scope amended 2026-11-26 after
+live re-verification of the committed jsonl; operator accepted the amendment):
+- CAN: offline re-verification via `stats.py` (attempts are committed) — of **three**
+  recorded arms, not two. A third file exists on disk:
+  `results/world1/world1_AF2_results.jsonl` (25 rows, AF2, recorded 25/25).
+- The rc=124 (timeout-killed) rows must be voided first. Recomputed 2026-11-26:
+  **A 18/25 pass, 2 of them rc=124; B 17/25, 4 of them rc=124; AF2 25/25, 17 of
+  them rc=124** (AF2's clean total is 8/25). `stats.py` has **no** void/timeout
+  handling — E.4 adds it. F.2 discloses all three arms and the timeout-coded passes.
 - CANNOT: a live World-1 regression, for four independent reasons — (1) the **task
   prompts** are not recorded anywhere (only `task_id` + `family` survive); (2) the
   **world files** the arms read are not in any repo; (3) **no gold hashes** exist —
@@ -95,7 +102,7 @@ hashes prove it. A solver that shortcuts is a grader that lies.
 | E.1 | Freeze `spec/split.json` + world hash; abort on any change | tamper test | 10 m |
 | E.2 | World-2 run, both arms (MINIMAL / GATED), model route `nvidia/nemotron-3-ultra-550b-a55b` over the relay (live-verified 2026-11-26), budget recorded per arm | budget respected within tolerance; receipts chain ok | 2–4 h API |
 | E.3 | Harness² comparison: same world, same model, same budget, via `harness2_adapter.py` | parity of spec recorded | 1–2 h API |
-| E.4 | World-1: **cannot re-run** (no world data). Offline re-verification of the recorded 18/25 vs 17/25 summary from `results/world1/world1_A_B_results.jsonl` via `stats.py` | reproduction matches the recorded numbers or the discrepancy is published | 30 m |
+| E.4 | World-1: **cannot re-run** (no world data). Offline re-verification via `stats.py` over **both** jsonl files (A, B **and** AF2), with rc=124 rows voided per E.5 — add void/timeout handling to `stats.py` first | reproduction matches the recorded numbers **after voids**, and the pre-void numbers are published beside them | 45 m |
 | E.5 | Void-and-rerun policy executed and marked in the report (voids already possible: FREETIER 429s — providers.json notes the throttle) | every void has a reason row | — |
 
 ## Phase F — Item 10: the report (generated, not written)
@@ -116,18 +123,22 @@ hashes prove it. A solver that shortcuts is a grader that lies.
 
 ---
 
-## Decisions this plan needs from you (3)
+## Decisions (1 and 3 resolved 2026-11-26; 2 still open)
 
-1. **World-1 scope.** Offline re-verification only (E.4), with the live regression
-   declared impossible from committed code — or do you want the old world rebuilt by
-   hand somewhere offline first? The first is defensible in independent scoring; the
-   second reintroduces unverifiable inputs.
-2. **Run window for Phase E.** Runs need the NVIDIA relay (live-verified key path) and
-   2–4 h of API time. Stage and dry-run everything A–D first, then execute E in one
+1. **World-1 scope — RESOLVED: offline re-verification only, with the amendment
+   recorded above** (three arms, AF2 file disclosed, rc=124 rows voided before the
+   comparison is quoted). The live regression stays declared impossible from
+   committed code. Rebuilding the world by hand was rejected: it reintroduces
+   unverifiable inputs.
+2. **Run window for Phase E — OPEN.** Runs need the NVIDIA relay (live-verified key path)
+   and 2–4 h of API time. Stage and dry-run everything A–D first, then execute E in one
    sitting?
-3. **Who gets the adversary.** MINIMAL arm too, or unknown-world/GATED only? Applying
-   it to both doubles API cost; applying it to one makes the recovery comparison
-   partial.
+3. **Who gets the adversary — RESOLVED: the HypothesisEngine path only** (D.2b).
+   MINIMAL/GATED have no hypothesis cycles; an adversary there measures the
+   adversary, not the arm's recovery. The control is a clean run of the same arm on
+   the same world at the same budget — that pair is the measured McNemar comparison.
+   Code-verified: `run_world.py`'s `arm_name` is a label only; every arm runs the
+   identical discovery→hypothesis→verify→grade pipeline.
 
 ## Blockers (not code — yours, from REMAINING_WORK §3)
 

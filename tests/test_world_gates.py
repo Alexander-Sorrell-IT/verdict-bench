@@ -39,7 +39,6 @@ def layout(tmp_path):
                 "tasks": [
                     {
                         "task_id": "W2-000",
-                        "family": "hidden",
                         "description": "Find the value.",
                     }
                 ],
@@ -149,6 +148,58 @@ def test_a_stubbed_solver_is_blocking(layout):
     )
     _results, blocking = _run(layout)
     assert "solver:not-a-stub" in blocking
+
+
+def test_gold_sitting_in_the_public_tree_is_blocking(layout):
+    """The gap A.3 closes: gold BESIDE the manifest, not in the sandbox. A
+    sandbox-only scan passes a directory that literally contains the answer key."""
+    world_dir, sandbox_dir = layout
+    gold = (world_dir / "private" / "gold_world2.json").read_text()
+    (world_dir / "gold_world2.json").write_text(gold)
+    _results, blocking = _run(layout)
+    assert "separation:no-gold-filename:gold" in blocking
+    assert "leak:no-answer-key-in-public-tree" in blocking
+
+
+def test_gold_under_an_innocent_name_in_the_public_tree_is_blocking(layout):
+    """Filename markers miss a renamed key; the canary scan does not - the file's
+    CONTENT is the answer key whatever it is called."""
+    world_dir, sandbox_dir = layout
+    gold = (world_dir / "private" / "gold_world2.json").read_text()
+    (world_dir / "answers_v2.json").write_text(gold)
+    _results, blocking = _run(layout)
+    assert "leak:no-answer-key-in-public-tree" in blocking
+
+
+def test_a_gold_path_pointing_into_the_public_tree_is_blocking(layout):
+    """The exact-path gate: gold RESOLVED inside the agent-visible tree, which is
+    what a run misconfigured with a root-level gold path looks like."""
+    world_dir, sandbox_dir = layout
+    moved = world_dir / "gold_world2.json"
+    moved.write_text((world_dir / "private" / "gold_world2.json").read_text())
+    results, blocking = world_gates.check_world(world_dir, sandbox_dir, moved)
+    assert "separation:gold-outside-public-tree" in blocking
+    by_name = {r["name"]: r for r in results}
+    assert by_name["separation:gold-outside-public-tree"]["status"] == "FAIL"
+
+
+def test_the_withheld_private_root_is_not_the_public_tree(layout):
+    """The exclusion that makes the scan correct: private/ gold is allowed to
+    exist - it is where gold MUST live."""
+    world_dir, sandbox_dir = layout
+    results, blocking = _run(layout)
+    assert blocking == []
+    assert results["separation:gold-outside-public-tree"]["status"] == "PASS"
+
+
+def test_family_in_a_manifest_task_is_blocking(layout):
+    """The singular leaks the taxonomy even after the root list is gone."""
+    world_dir, sandbox_dir = layout
+    manifest = json.loads((world_dir / "world_manifest.json").read_text())
+    manifest["tasks"][0]["family"] = "config-parsing"
+    (world_dir / "world_manifest.json").write_text(json.dumps(manifest))
+    _results, blocking = _run(layout)
+    assert "manifest:task-clean:W2-000" in blocking
 
 
 def test_the_report_states_what_it_cannot_check(layout):

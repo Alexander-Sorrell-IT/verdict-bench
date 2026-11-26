@@ -48,6 +48,7 @@ LEAKY_MANIFEST_KEYS = frozenset(
         "gold_hash",
         "hidden_rules",
         "families",
+        "family",
         "answers",
         "expected",
     }

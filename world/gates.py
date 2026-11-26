@@ -28,13 +28,16 @@ from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from world.paths import GOLD_FILENAME, PRIVATE_DIRNAME  # noqa: E402
 
-# Keys that must never reach an agent, whatever file they are in.
+# Keys that must never reach an agent, whatever file they are in. "family" is the
+# singular: per-task family entries leak the five-family taxonomy even after the
+# root "families" list is gone.
 LEAKY_KEYS = frozenset(
     {
         "gold_answer",
         "gold_hash",
         "hidden_rules",
         "families",
+        "family",
         "answers",
         "expected",
     }
@@ -103,14 +106,26 @@ def check_world(
     answers = gold.get("answers", gold)
 
     # ---- separation: gold must not be reachable from the agent's tree ----------
+    # The agent's tree is BOTH the arm's sandbox and the world's public files
+    # (world_dir minus the withheld private root). A gold file sitting beside the
+    # manifest is invisible to a sandbox-only scan - that is the gap this closes.
     record(
         "separation:gold-outside-sandbox",
         not _inside(gold_path, sandbox_dir),
         f"gold at {gold_path} is inside {sandbox_dir}",
     )
 
+    public_files = _agent_visible_files(world_dir)
+    record(
+        "separation:gold-outside-public-tree",
+        gold_path.resolve() not in {p.resolve() for p in public_files},
+        f"gold at {gold_path} sits in the agent-visible tree",
+    )
+
     for marker in GOLD_SHAPED:
-        hits = [p for p in _files(sandbox_dir) if marker in p.name.lower()]
+        hits = [
+            p for p in _files(sandbox_dir) + public_files if marker in p.name.lower()
+        ]
         record(
             f"separation:no-gold-filename:{marker}",
             not hits,
@@ -131,7 +146,8 @@ def check_world(
             canaries.append(str(rec["gold_hash"]))
     canaries = sorted({c for c in canaries if len(c) >= 8})
     canaries.append(json.dumps(gold, sort_keys=True))
-    leaking = _files_containing(sandbox_dir, canaries)
+    scanned = _files(sandbox_dir) + public_files
+    leaking = _scan_files_for(scanned, canaries)
     record(
         "leak:no-answer-key-in-public-tree",
         not leaking,
@@ -257,10 +273,26 @@ def _files(root: Path) -> List[Path]:
     return sorted(p for p in root.rglob("*") if p.is_file())
 
 
-def _files_containing(root: Path, values: List[str]) -> List[Tuple[Path, str]]:
-    """Files in the agent-visible tree containing a gold value."""
+def _agent_visible_files(world_dir: Path) -> List[Path]:
+    """Every file an arm could read: the world dir minus the withheld private root
+    (and bytecode caches, which are not content). Withholding wins over scope: a
+    "private" directory at ANY depth is excluded, not just the root's."""
+    public: List[Path] = []
+    for path in sorted(world_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        if PRIVATE_DIRNAME in path.parts:
+            continue
+        if "__pycache__" in path.parts:
+            continue
+        public.append(path)
+    return public
+
+
+def _scan_files_for(files: List[Path], values: List[str]) -> List[Tuple[Path, str]]:
+    """Which of these files contain which gold value."""
     hits: List[Tuple[Path, str]] = []
-    for path in _files(root):
+    for path in files:
         try:
             text = path.read_text(errors="replace")
         except OSError:
@@ -270,6 +302,11 @@ def _files_containing(root: Path, values: List[str]) -> List[Tuple[Path, str]]:
                 hits.append((path, value))
                 break
     return hits
+
+
+def _files_containing(root: Path, values: List[str]) -> List[Tuple[Path, str]]:
+    """Files in the agent-visible tree containing a gold value."""
+    return _scan_files_for(_files(root), values)
 
 
 def _inside(candidate: Path, root: Path) -> bool:

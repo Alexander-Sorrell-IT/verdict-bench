@@ -4,10 +4,17 @@ Everything still to do, in order, with the state each thing starts from. Written
 fresh session (or another engineer) can pick this up cold.
 
 **Working tree:** `/media/phantomcore/AI_DRIVE/take home test/verdict-bench`
-**Committed:** 10 commits, `dca8cd1` → `656be90`. **Tests:** 80 passing.
+**Committed:** 13 commits, `dca8cd1` → `5c57c71`. **Tests:** 92 passing.
 **Source of truth for the plan:** `PLAN_2026-11-27.md` (v2) and `ABSORPTION_PLAN.md`.
 **Retraction of the false result:** `AUDIT_2026-11-25.md` + corrective commit `dd6c1df`
 in `code-hunter-extreme`.
+
+**Test-run note (environment, fixed):** the PhantomCore venv's hypothesis 6.148.8 pytest
+plugin crashes in `terminal_summary` after the suite finishes. Tests are fine. Run:
+
+```
+python -m pytest -q -p no:hypothesispytest      # → 92 passed
+```
 
 ---
 
@@ -15,6 +22,7 @@ in `code-hunter-extreme`.
 
 | Module | Lines | Tests | Note |
 |---|---|---|---|
+| `world/gates.py` | 277 | 12 | **Item 5's gate suite — DONE, `5c57c71`.** Verified live below |
 | `runner/bench.py` | 616 | self-test | matched budget, **hash grading**, leakage guard. Rejects the committed world with 8 findings |
 | `runner/stats.py` | 536 | verified on real World-1 | McNemar exact, disagreement table, Wilson bounds (replaces RESULTS.md's impossible 100%-100%) |
 | `runner/receipts.py` | 194 | 8 | hash-chained tamper-evident results. **Absorbed from `acme-refund-agent`** |
@@ -24,7 +32,26 @@ in `code-hunter-extreme`.
 | `harness/keys.py` | 193 | 8 | **OmniCLI's exact precedence order**; loads an OmniCLI config unmodified |
 | `harness/budget.py` | — | — | one `Budget` definition shared by runner and arms; refuses missing fields |
 | `harness/filelens/` | 550 | 21 | vendored file tool, PolyForm notices intact |
-| `tests/` | — | **80 pass** | |
+| `tests/` | — | **92 pass** | |
+
+**What the world gates enforce** (reproduced 2026-11-26, not claimed):
+
+```
+python -m world.gates world <empty-sandbox> world/gold_world2.json
+→ 63/64 gates passed, exit 1, BLOCKING: manifest:no-leaked-keys ['families']
+```
+
+Three patterns ported from `alignerr-task-factory/verify/gates.py`: the leak gate
+(answer key: gold file contents + gold hashes — **not** derivable values, which would
+reject every legitimate "find the value in the file" world), the sealed grader
+signature (gold as an argument, never read from inside the agent's tree), and the
+coverage report printing what the gates **cannot** check — "green here means
+structurally sound, not that the benchmark is fair".
+
+**Correction to the session log:** the "5 blocking findings" figure was produced by the
+fixture layout in `tests/test_world_gates.py` (gold files inside the tree, canary in a
+public file, taxonomy in the manifest). Reproduced against the **committed** world,
+exactly **one** gate blocks: `families` in the agent-visible manifest. Live facts only.
 
 **Live-verified facts (do not re-litigate):**
 - The key path resolves the real `NVIDIA_API_KEY` (70 chars, `nvapi…`).
@@ -36,13 +63,48 @@ in `code-hunter-extreme`.
 
 ## 2. Still to do, in dependency order
 
-### Item 5 — World rewrite + gate suite (~2 h)
-- [ ] `world/build_world.py`: drop `families` from the agent-visible manifest; no answer formula anywhere the model sees; gold written **outside** the agent-visible tree
-- [ ] `world/gates.py`: per-world verification gates, pattern from `alignerr-task-factory/verify/gates.py` (read-first)
-- [ ] Adopt the hard rule: **a task that cannot be verified in code does not ship** — deleting the verifier fails the build, not the run
-- [ ] Unknown-world families must not overlap World 1's five (contract-compliance, ops-reporting, config-audit, log-forensics, reconciliation)
-- [ ] Gate: `bench.py` leakage guard returns **zero** findings on the new world
-- [ ] Implement `world/independent_solver()` — solves from public files only, in code, no LLM (replaces the `solved = False  # placeholder` stub)
+### Item 5 — World rewrite (gate suite done; the world itself is not)
+
+**Done:** `world/gates.py` + 12 tests, `5c57c71`. **Not done:** the rewrite the gates
+are supposed to certify, and the wiring that makes them blocking.
+
+- [ ] **`world/build_world.py` rewrite (plan 3.1)** — gold derivation already derives
+      from hidden rules via `_gold_from_rules()`; what must change:
+  - [ ] drop `families` from the agent-visible manifest root and `family` from every
+        manifest task entry (both at lines ~216 and ~247)
+  - [ ] `GOLD_PATH` (`world/gold_world2.json`) and `FREEZE_world2.json` write **inside**
+        `world/`, the tree the agent reads — move gold and freeze outside the agent-
+        visible tree (see §3 blocker 2 for the path convention)
+  - [ ] delete dead code `_generate_gold_answer` (line 153): rng-based, inconsistent
+        with `_gold_from_rules`, called nowhere
+  - [ ] gate: `bench.py` leakage guard returns **zero** findings on the new world
+- [ ] **`world/independent_solver.py` — real implementation.** Gates already look for a
+      standalone `world/independent_solver.py` with `solver:no-llm` and
+      `solver:not-a-stub` (scans for `solved = False`). Today the solver lives inside
+      `build_world.py` (line 284) with `solved = False  # placeholder` (line 300); the
+      file the gates scan does not exist, so those gates silently skip. Move it and
+      implement per-family solving **from public files only, in code, no LLM**.
+- [ ] **Close the gate gap found in live testing.** The separation and leak gates scan
+      only `sandbox_dir`; the leak canaries are correct, but in the real layout the
+      agent-visible tree is `world/world_files/` + `world_manifest.json` while gold sits
+      *beside* them in `world/` — so `leak:no-answer-key-in-public-tree` PASSES a
+      directory that literally contains `gold_world2.json`. Either invoke the gates with
+      the true agent-visible tree as the sandbox, or point the leak scan at `world_dir`
+      too (excluding the withheld path). A gate that cannot see the tree it protects is
+      theatre.
+- [ ] **`family` (singular) is not in `LEAKY_KEYS`** — per-task `family` entries leak the
+      five-family taxonomy even after root `families` is dropped. Add it (or drop the
+      field in the rewrite; do both).
+- [ ] **Wire the hard rule (plan 3.2): "a task that cannot be verified in code does not
+      ship."** Verified now: **no** caller in `runner/`, `harness/` or `score/` invokes
+      `check_world` — the gates exist, but nothing refuses to run a failing world. Make
+      `runner/` call `check_world` and abort with exit 1 before any run; prove with a
+      test that deleting the verifier fails the build, not the run.
+- [ ] **Family overlap gate (plan 3.3):** codify a test that World 2's families
+      (config-parsing, log-pattern-detection, file-hash-verification,
+      command-output-transformation, environment-variable-resolution) do not overlap
+      World 1's five (contract-compliance, ops-reporting, config-audit, log-forensics,
+      reconciliation). Hold today; uncodified.
 
 ### Item 6 — Adversary + measured recovery (~1 h)
 - [ ] `harness/adversary.py`: deterministic contradiction injector. **Concept only** from `glass-box-alpha/devils_advocate` (34 lines, an LLM agent class — do not absorb)
@@ -90,7 +152,8 @@ in `code-hunter-extreme`.
 2. **World-1 gold** — `world/private/tasks_gold.json` was never pushed and does not exist
    in any repo. If it cannot be regenerated from world data *in code*, item 9's World-1
    regression is impossible and the flagship numbers stay un-re-derivable. **This is the
-   one real schedule risk.**
+   one real schedule risk.** (Also the path convention item 5 should use for withheld
+   gold, per §2.)
 3. **Commit or revert the dirty OmniCLI submodule** in `code-hunter-extreme` — the
    port-back files (`discovery.py`, `hypothesis_engine.py`, `self_verify.py`,
    `harness2_adapter.py`, `tests/test_verdict_bench_port.py`) are uncommitted and exist
@@ -111,7 +174,7 @@ in `code-hunter-extreme`.
 ## 5. Ground rules (each earned by a failure)
 
 1. **Read before claiming.** A description is a claim until code has been opened. Three times tonight a description was wrong and cost hours (`touchstone`, "9 repos", `RESULTS.md`'s setup).
-2. **No number without reproduction.** A result that cannot be regenerated from committed code by someone else does not exist.
+2. **No number without reproduction.** A result that cannot be regenerated from committed code by someone else does not exist. (This record now carries the reproduced gate result, not the remembered one.)
 3. **No warnings, only block or allow.** A gate that warns is a gate the model learns to ignore.
 4. **A failed arm returns an empty answer.** Never a fabricated placeholder. That is the single rule that separates this from the retracted result.
 5. **Absorb machinery, rewrite domain glue.** The moment a source repo's domain assumptions leak into how verdict-bench scores, one reusable instrument becomes nine coupled ones.
@@ -124,4 +187,4 @@ A run where **all** of these hold: the world hash is frozen before any arm start
 
 Until that exists, Ali's question — *"can it generalize under those conditions?"* — is unanswered, and everything built so far is the instrument that will answer it.
 
-**Remaining: ~9 h of construction, plus the two blockers in §3.**
+**Remaining: item 5's rewrite and wiring (~1.5 h) + items 6–11 (~9 h), plus the blockers in §3.**

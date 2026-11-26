@@ -1,60 +1,55 @@
 {
-  "_comment": "Provider registry for operator mode. Any OpenAI-COMPATIBLE endpoint works with runner/relay.py unchanged. NEVER put a key in this file - keys live in secrets/<provider>.key (gitignored) or the named env var.",
-  "_relay_usage": "python runner/relay.py --upstream <base_url> --key-file secrets/<provider>.key --rpm <rpm>",
+  "_comment": "Provider registry in OmniCLI's field shape: env_key, alt_env_keys, base_url, base_url_template, default_model, requires_auth_for_models, fallback_models. That shape is deliberate - an OmniCLI config.json (OMNICLI_CONFIG_DIR) loads unmodified, so existing providers and keys are reused rather than duplicated. Keys never live in this file. No key is ever written to a config, a results file, or a receipt row.",
+  "default_provider": "nvidia",
   "providers": {
     "nvidia": {
+      "name": "NVIDIA",
       "base_url": "https://integrate.api.nvidia.com/v1",
-      "env_var": "NVIDIA_API_KEY",
-      "key_file": "secrets/nvidia.key",
-      "rpm": 35,
-      "notes": "Free tier. Quota = HTTP 429; throttle below your quota or the run degrades silently. The arm used by the World-1 head-to-head per RESULTS.md."
+      "env_key": "NVIDIA_API_KEY",
+      "alt_env_keys": ["NVAPI_KEY"],
+      "default_model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "requires_auth_for_models": true,
+      "_notes": "The model RESULTS.md claims the World-1 arms used. Free tier throttles at HTTP 429; throttle below quota or the run degrades silently."
     },
     "openrouter": {
+      "name": "OpenRouter",
       "base_url": "https://openrouter.ai/api/v1",
-      "env_var": "OPENROUTER_API_KEY",
-      "key_file": "secrets/openrouter.key",
-      "rpm": 60,
-      "notes": "One key, many models. Free tier is rate-limited; record model id exactly - aliases move."
+      "env_key": "OPENROUTER_API_KEY",
+      "default_model": "openai/gpt-4o-mini",
+      "requires_auth_for_models": true,
+      "_notes": "One key, many models. Free tier is rate-limited; record the model id exactly."
     },
     "groq": {
+      "name": "Groq",
       "base_url": "https://api.groq.com/openai/v1",
-      "env_var": "GROQ_API_KEY",
-      "key_file": "secrets/groq.key",
-      "rpm": 30,
-      "notes": "Free tier, very fast, small context on some models."
+      "env_key": "GROQ_API_KEY",
+      "default_model": "llama-3.3-70b-versatile",
+      "requires_auth_for_models": true,
+      "_notes": "Free tier, fast, small context on some models."
     },
     "gemini": {
+      "name": "Gemini",
       "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-      "env_var": "GEMINI_API_KEY",
-      "key_file": "secrets/gemini.key",
-      "rpm": 60,
-      "notes": "OpenAI-compatible endpoint. The NATIVE API is not compatible - use this base_url or write an adapter."
+      "env_key": "GEMINI_API_KEY",
+      "default_model": "gemini-2.0-flash",
+      "requires_auth_for_models": true,
+      "_notes": "OpenAI-COMPATIBLE endpoint. The native Gemini API is not compatible - use this base_url or write an adapter."
     },
     "anthropic": {
+      "name": "Anthropic",
       "base_url": "https://api.anthropic.com/v1",
-      "env_var": "ANTHROPIC_API_KEY",
-      "key_file": "secrets/anthropic.key",
-      "rpm": 50,
-      "notes": "OpenAI-compatibility is partial. Verify tool-calling behaves before trusting a run."
-    },
-    "together": {
-      "base_url": "https://api.together.xyz/v1",
-      "env_var": "TOGETHER_API_KEY",
-      "key_file": "secrets/together.key",
-      "rpm": 60
-    },
-    "fireworks": {
-      "base_url": "https://api.fireworks.ai/inference/v1",
-      "env_var": "FIREWORKS_API_KEY",
-      "key_file": "secrets/fireworks.key",
-      "rpm": 60
+      "env_key": "ANTHROPIC_API_KEY",
+      "default_model": "claude-sonnet-4-5",
+      "requires_auth_for_models": true,
+      "_notes": "OpenAI compatibility is partial. Verify tool-calling behaviour before trusting a run."
     },
     "ollama": {
+      "name": "Ollama (local)",
       "base_url": "http://127.0.0.1:11434/v1",
-      "env_var": null,
-      "key_file": null,
-      "rpm": 100000,
-      "notes": "Local, unlimited floor. Not comparable to a hosted arm unless BOTH arms use it - see the parity invariant."
+      "env_key": null,
+      "default_model": "qwen2.5-coder:14b",
+      "requires_auth_for_models": false,
+      "_notes": "Local, no key. Not comparable to a hosted arm unless BOTH arms use it - see the parity invariant."
     }
   }
 }

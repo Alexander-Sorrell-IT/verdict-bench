@@ -1,0 +1,12 @@
+{
+  "_comment": "Keys FILE example - copy to keys.json (gitignored). The env var path is preferred; this file is the fallback when a key cannot be exported. Resolution order is OmniCLI's: env_key -> alt_env_keys -> this file -> error. No key is ever written to a config, a results file, or a receipt row.",
+  "nvidia": "nvapi-...",
+  "openrouter": "sk-or-...",
+  "groq": "gsk_...",
+  "gemini": "AIza...",
+  "anthropic": "sk-ant-...",
+  "_usage": {
+    "command": "VERDICT_BENCH_KEYS_FILE=keys.json python3 runner/bench.py ...",
+    "note": "A provider absent here still resolves from its env var."
+  }
+}

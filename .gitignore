@@ -17,3 +17,5 @@ world_manifest_3.json
 # operator-mode secrets: never commit
 keys.toml
 secrets/
+
+keys.json

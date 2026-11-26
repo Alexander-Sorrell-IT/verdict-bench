@@ -46,6 +46,10 @@ def layout(tmp_path):
         )
     )
     (world_dir / "private").mkdir(parents=True)
+    # A shippable world carries a real solver - its absence is blocking (A.4).
+    (world_dir / "independent_solver.py").write_text(
+        "def solve(task):\n    return read_public_files(task)\n"
+    )
     (world_dir / "private" / "gold_world2.json").write_text(
         json.dumps(
             {
@@ -148,6 +152,15 @@ def test_a_stubbed_solver_is_blocking(layout):
     )
     _results, blocking = _run(layout)
     assert "solver:not-a-stub" in blocking
+
+
+def test_a_deleted_verifier_blocks_the_world(layout):
+    """Deleting the verifier fails the world, not just the run: silence is not
+    a pass, so the missing solver is a blocking gate."""
+    world_dir, sandbox_dir = layout
+    (world_dir / "independent_solver.py").unlink()
+    _results, blocking = _run(layout)
+    assert "solver:exists" in blocking
 
 
 def test_gold_sitting_in_the_public_tree_is_blocking(layout):

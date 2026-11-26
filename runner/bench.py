@@ -19,7 +19,8 @@
 #   REJECT       - otherwise, or budget/leakage violation
 #
 # Usage:
-#   python runner/bench.py --spec spec/arms.json --gold world/gold.json --out results/run1
+#   python runner/bench.py --spec spec/arms.json --gold world/private/gold_world2.json \
+#       --manifest world/world_manifest.json --sandbox world/world_files --out results/run1
 #   python runner/bench.py --self-test
 
 from __future__ import annotations
@@ -37,8 +38,12 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple
 BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BENCH_DIR / "runner"))
 sys.path.insert(0, str(BENCH_DIR / "harness"))
+sys.path.insert(0, str(BENCH_DIR))
 
 from harness.budget import Budget  # noqa: E402  (one definition, shared with the arms)
+
+# The hard rule (world/gates.py): a world that cannot be verified does not run.
+from world.gates import check_world, report as gate_report  # noqa: E402
 
 # Keys that must never appear in anything handed to an arm: they name the answer, the
 # hidden rules that produce it, or the task taxonomy that removes the need to discover.
@@ -499,6 +504,21 @@ def self_test() -> int:
 # ----------------------------------------------------------------------------- main
 
 
+def enforce_world_gates(world_dir: Path, sandbox_dir: Path, gold_path: Path) -> None:
+    """The hard rule: a world that cannot be verified in code does not run.
+
+    Runs every world gate and raises BenchmarkError - aborting the run before any
+    arm is loaded - on any blocking failure. This is what was missing when a
+    contaminated world was benchmarked: the gates existed and nothing called them.
+    """
+    results, blocking = check_world(world_dir, sandbox_dir, gold_path)
+    print(gate_report(results, blocking))
+    if blocking:
+        raise BenchmarkError(
+            f"world gates BLOCKING: {', '.join(blocking)} - the run is refused"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="verdict-bench arm runner")
     parser.add_argument(
@@ -540,6 +560,15 @@ def main() -> int:
     except (BenchmarkError, json.JSONDecodeError, OSError) as exc:
         print(f"BENCHMARK INVALID: {exc}", file=sys.stderr)
         return 2
+
+    # The hard rule, before any arm is loaded: a world that cannot be verified
+    # in code does not run. Exit 1 - the run is refused, not merely unimpressive.
+    world_dir = args.manifest.resolve().parent
+    try:
+        enforce_world_gates(world_dir, args.sandbox, args.gold)
+    except BenchmarkError as exc:
+        print(f"RUN REFUSED: {exc}", file=sys.stderr)
+        return 1
 
     args.out.mkdir(parents=True, exist_ok=True)
     reports: List[ArmReport] = []

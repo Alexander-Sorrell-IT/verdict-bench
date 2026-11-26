@@ -188,6 +188,8 @@ def check_world(
         )
 
     # ---- the independent solver must exist and not call a model ---------------
+    # A MISSING solver is blocking, not skipped. Silence is not a pass: gates that
+    # check nothing because their target was deleted are how a paradox ships.
     solver_path = world_dir / "independent_solver.py"
     if solver_path.is_file():
         source = solver_path.read_text(errors="replace")
@@ -201,6 +203,13 @@ def check_world(
             "solver:not-a-stub",
             "solved = False" not in source,
             "a stubbed solver verifies nothing",
+        )
+    else:
+        record(
+            "solver:exists",
+            False,
+            f"{solver_path} missing - nothing proves the tasks are solvable "
+            "from public files, so the world may not be used",
         )
 
     blocking = [r["name"] for r in results if r["status"] == "FAIL"]

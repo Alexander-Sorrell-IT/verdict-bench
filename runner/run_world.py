@@ -19,21 +19,23 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # Add verdict-bench to path
 VERDICT_BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(VERDICT_BENCH_DIR / "runner"))
 sys.path.insert(0, str(VERDICT_BENCH_DIR / "world"))
+sys.path.insert(0, str(VERDICT_BENCH_DIR))
 
 from discovery import run_discovery  # noqa: E402
 from hypothesis import HypothesisEngine, run_hypothesis_task  # noqa: E402
 from verify import verify_deliverable, write_verification_report  # noqa: E402
-from grader import grade_world, write_grade_report  # noqa: E402
+from grader import grade_world  # noqa: E402
+from world.gates import check_world, report as gate_report  # noqa: E402
+from world.paths import GOLD_FILENAME, PRIVATE_DIRNAME  # noqa: E402
 
 
 def run_arm(world_manifest: Path, arm_name: str, output_dir: Path) -> Dict[str, Any]:
@@ -46,7 +48,6 @@ def run_arm(world_manifest: Path, arm_name: str, output_dir: Path) -> Dict[str, 
     task_results: List[Dict[str, Any]] = []
     discovery_path = output_dir / "discovery.md"
     hypothesis_log_path = output_dir / "hypothesis_log.md"
-    verification_report_path = output_dir / "verification_report.md"
 
     # Phase 1: Discovery (once per world, cached)
     # Run from the world directory where world_files exists
@@ -196,6 +197,21 @@ def main() -> None:
     if not world_path.exists():
         print(f"World manifest not found: {world_path}")
         print("Run with --build-world to generate it first.")
+        sys.exit(1)
+
+    # The hard rule, before any arm runs: a world that cannot be verified in
+    # code does not run. The world dir holds the withheld private root, so the
+    # sandbox the gates check is the data dir the arm reads (world_files) and
+    # the public-tree scan covers the manifest beside it.
+    world_dir = world_path.resolve().parent
+    results, blocking = check_world(
+        world_dir,
+        world_dir / "world_files",
+        world_dir / PRIVATE_DIRNAME / GOLD_FILENAME,
+    )
+    print(gate_report(results, blocking))
+    if blocking:
+        print(f"RUN REFUSED: world gates blocking: {', '.join(blocking)}")
         sys.exit(1)
 
     # Run each arm

@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 100
+extend-ignore =
+    # black formats slices as `x[a : b]`; flake8 E203 predates that convention.
+    E203
+per-file-ignores =
+    # tests insert the repo root on sys.path before importing project modules
+    tests/*: E402

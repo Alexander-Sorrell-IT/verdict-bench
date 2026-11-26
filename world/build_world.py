@@ -156,45 +156,56 @@ def _generate_hidden_rules(
 
 
 def _create_world_files(world: Dict[str, Any], seed: int) -> None:
-    """Create the actual files referenced by hidden rules, so the agent can find them."""
+    """Create the per-task evidence files, so every task is solvable from public data.
+
+    Each task's evidence is named for its task_id: the manifest is public, so an arm
+    correlates its task with its file by listing world_files. The old layout named
+    files from the hidden rules (config_51.conf and friends) and left two families
+    with NO evidence at all - a task whose answer no public file can produce is a
+    paradox, and a world that ships paradoxes measures file-selection luck.
+    (Positional order is not a convention either: seed 20261120's config files
+    happen to sort into task order; its log files demonstrably do not.)
+    """
     FILES_DIR.mkdir(parents=True, exist_ok=True)
+    for stale in FILES_DIR.iterdir():
+        if stale.is_file():
+            stale.unlink()
 
     for task in world["tasks"]:
         rules = task.get("hidden_rules", {})
         family = task["family"]
+        task_id = task["task_id"]
 
         if family == "config-parsing":
-            fname = rules.get("config_file", "")
             key = rules.get("key_name", "")
             value = rules.get("expected_value", "")
-            if fname and key and value:
-                fpath = FILES_DIR / fname
-                fpath.write_text(f"{key} = {value}\n")
+            if key and value:
+                (FILES_DIR / f"{task_id}.conf").write_text(f"{key} = {value}\n")
 
         elif family == "log-pattern-detection":
-            fname = rules.get("log_file", "")
             pattern = rules.get("pattern", "")
             count = rules.get("expected_count", 0)
-            if fname and pattern and count:
-                fpath = FILES_DIR / fname
-                lines = []
-                for i in range(count):
-                    lines.append(f"{pattern}: error message {i}")
+            if pattern and count:
+                lines = [f"{pattern}: error message {i}" for i in range(count)]
                 lines.append("INFO: normal operation")
                 lines.append("WARNING: something minor")
-                fpath.write_text("\n".join(lines) + "\n")
+                (FILES_DIR / f"{task_id}.log").write_text("\n".join(lines) + "\n")
 
         elif family == "file-hash-verification":
-            fname = rules.get("target_file", "")
-            if fname:
-                fpath = FILES_DIR / fname
-                fpath.write_bytes(b"hidden_file_content")
+            (FILES_DIR / f"{task_id}.bin").write_bytes(b"hidden_file_content")
 
         elif family == "command-output-transformation":
-            pass
+            cmd = rules.get("command", [])
+            payload = cmd[1] if len(cmd) > 1 else ""
+            if payload:
+                script = f"#!/bin/sh\necho {payload}\n"
+                (FILES_DIR / f"{task_id}.sh").write_text(script)
 
         elif family == "environment-variable-resolution":
-            pass
+            var = rules.get("env_var", "")
+            val = rules.get("env_value", "")
+            if var and val:
+                (FILES_DIR / f"{task_id}.env").write_text(f"{var}={val}\n")
 
 
 def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:

@@ -1,0 +1,36 @@
+{
+  "arm": "AF2",
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "total_tasks": 3,
+  "task_results": [
+    {
+      "task_id": "W2-000",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "{\"value\":\"value_2022\"}",
+      "elapsed_seconds": 86.53,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:09:36.085597Z"
+    },
+    {
+      "task_id": "W2-001",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "awk -F' = ' '/ = / {gsub(/ /, \"\", $2); print \"{\\\"value\\\":\\\"\" $2 \"}\"}' world_files/*.log | head -1",
+      "elapsed_seconds": 85.41,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:11:02.618703Z"
+    },
+    {
+      "task_id": "W2-002",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "{\"value\": \"config_51.conf\"}",
+      "elapsed_seconds": 73.54,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:12:28.028700Z"
+    }
+  ],
+  "recovery_rate": 1.0
+}

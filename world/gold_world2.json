@@ -1,0 +1,156 @@
+{
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "answers": {
+    "W2-000": {
+      "gold_hash": "259e7a3a48e07e53319750323ebf0c463d012eb9b4994ebd0b7f3190233048f0",
+      "gold_answer": {
+        "value": "value_2022"
+      }
+    },
+    "W2-001": {
+      "gold_hash": "3e7caa2097c401b1b0068565b66f3ac89c6221a82d8614acd25475b171bc79be",
+      "gold_answer": {
+        "count": 7
+      }
+    },
+    "W2-002": {
+      "gold_hash": "a32b782f211d209bcbd43d36555d9997e027bf52e524ea4c8a3bca2ae12836e4",
+      "gold_answer": {
+        "hash": "53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa"
+      }
+    },
+    "W2-003": {
+      "gold_hash": "452c0f94e227cbb31c68f2279781b11a988b792acb7bb4147b3b0c1476362e39",
+      "gold_answer": {
+        "transformed": "HIDDEN_DATA_8060"
+      }
+    },
+    "W2-004": {
+      "gold_hash": "271c982a813a6378220593a7c86329dd9b954386076b7b67b823b46d26abd31c",
+      "gold_answer": {
+        "result": "3178_eulav_neddih"
+      }
+    },
+    "W2-005": {
+      "gold_hash": "079ed218b8d5da580734050b3b0f0e5162e9a7072b239e0789b1c15be16404ee",
+      "gold_answer": {
+        "value": "value_1870"
+      }
+    },
+    "W2-006": {
+      "gold_hash": "19ede2438c257767336cda69a53f3cc46c808ecc09737aaafc54aaf927c8c32f",
+      "gold_answer": {
+        "count": 41
+      }
+    },
+    "W2-007": {
+      "gold_hash": "a32b782f211d209bcbd43d36555d9997e027bf52e524ea4c8a3bca2ae12836e4",
+      "gold_answer": {
+        "hash": "53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa"
+      }
+    },
+    "W2-008": {
+      "gold_hash": "18f6fdbe2421702edaa64d355ed15b46ea9d50f1c306ba128738d3af71423e6e",
+      "gold_answer": {
+        "transformed": "HIDDEN_DATA_6899"
+      }
+    },
+    "W2-009": {
+      "gold_hash": "109415d88336060419e7258f10e0301617ca60f4ac7b03aa7f1daf2e2092317f",
+      "gold_answer": {
+        "result": "8862_eulav_neddih"
+      }
+    },
+    "W2-010": {
+      "gold_hash": "a0c0cf8e3abe49df3a5db3ae03e57ce3f7127c67edc00d7d5d88c6285648d12f",
+      "gold_answer": {
+        "value": "value_9815"
+      }
+    },
+    "W2-011": {
+      "gold_hash": "c37edbfff1f72aea430da6c184791c92f1be8c9be1f8ae8efb7bced0a6c7544f",
+      "gold_answer": {
+        "count": 29
+      }
+    },
+    "W2-012": {
+      "gold_hash": "a32b782f211d209bcbd43d36555d9997e027bf52e524ea4c8a3bca2ae12836e4",
+      "gold_answer": {
+        "hash": "53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa"
+      }
+    },
+    "W2-013": {
+      "gold_hash": "bf39ce0c4e704fcc0c3d75caa565e67daa12775030cb924f78e53079d3e82bfb",
+      "gold_answer": {
+        "transformed": "HIDDEN_DATA_4063"
+      }
+    },
+    "W2-014": {
+      "gold_hash": "ac8656d3a10ddbc00c6e175ca6765e0e4a599cb2b01b52ed78b17ff646b1a18f",
+      "gold_answer": {
+        "result": "6883_eulav_neddih"
+      }
+    },
+    "W2-015": {
+      "gold_hash": "6e527d097f1795db8890f427958560c0aeb308f0803853f172502fd8a17618d0",
+      "gold_answer": {
+        "value": "value_2781"
+      }
+    },
+    "W2-016": {
+      "gold_hash": "88d1b6c1c4a960477c959650bb97bc52d47c786ea86d3795d06753f0befe2e07",
+      "gold_answer": {
+        "count": 19
+      }
+    },
+    "W2-017": {
+      "gold_hash": "a32b782f211d209bcbd43d36555d9997e027bf52e524ea4c8a3bca2ae12836e4",
+      "gold_answer": {
+        "hash": "53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa"
+      }
+    },
+    "W2-018": {
+      "gold_hash": "c7efe93d1d219168c8c81636193991566319d0673d439c7d493eaabe2cdab4e4",
+      "gold_answer": {
+        "transformed": "HIDDEN_DATA_6947"
+      }
+    },
+    "W2-019": {
+      "gold_hash": "c95c94d10e729dcda38f5d5c37a978f52742f62f2c51cda44b688dbfa714d20e",
+      "gold_answer": {
+        "result": "9227_eulav_neddih"
+      }
+    },
+    "W2-020": {
+      "gold_hash": "23ed2e02043fff9327ce87871770c7bfc2d0a99b7660aa2651a6ad91f3c7308b",
+      "gold_answer": {
+        "value": "value_9571"
+      }
+    },
+    "W2-021": {
+      "gold_hash": "d42782005eeb08e9dd6c9d150fa60030bbe6b6bf2ccd34b6bdae48b9336ddf3c",
+      "gold_answer": {
+        "count": 27
+      }
+    },
+    "W2-022": {
+      "gold_hash": "a32b782f211d209bcbd43d36555d9997e027bf52e524ea4c8a3bca2ae12836e4",
+      "gold_answer": {
+        "hash": "53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa"
+      }
+    },
+    "W2-023": {
+      "gold_hash": "b2858c6ede96df9390a6e86381bfd0c89231b35aae4d24f2e0c6695dc90fd911",
+      "gold_answer": {
+        "transformed": "HIDDEN_DATA_8732"
+      }
+    },
+    "W2-024": {
+      "gold_hash": "665939f7cf42a46fe4832274f96d511dcae1a2e627541738bd58a13aa01bb93e",
+      "gold_answer": {
+        "result": "1007_eulav_neddih"
+      }
+    }
+  }
+}

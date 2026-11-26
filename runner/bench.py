@@ -36,6 +36,9 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BENCH_DIR / "runner"))
+sys.path.insert(0, str(BENCH_DIR / "harness"))
+
+from harness.budget import Budget  # noqa: E402  (one definition, shared with the arms)
 
 # Keys that must never appear in anything handed to an arm: they name the answer, the
 # hidden rules that produce it, or the task taxonomy that removes the need to discover.
@@ -67,15 +70,6 @@ MIN_GOLD_VALUE_LEN = 4
 
 class BenchmarkError(RuntimeError):
     """Raised when the benchmark itself is invalid - never swallowed into a result."""
-
-
-@dataclass(frozen=True)
-class Budget:
-    """Identical allowance for every arm. Consumed amounts are measured, never declared."""
-
-    max_steps: int
-    max_model_calls: int
-    max_wall_seconds: float
 
 
 @dataclass

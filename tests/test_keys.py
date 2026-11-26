@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "runner"))
 
-import keys as keys  # noqa: E402
+from harness import keys  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

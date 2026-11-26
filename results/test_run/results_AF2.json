@@ -1,0 +1,234 @@
+{
+  "arm": "AF2",
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "total_tasks": 25,
+  "task_results": [
+    {
+      "task_id": "W2-000",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "Task W2-000: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.803208Z"
+    },
+    {
+      "task_id": "W2-001",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "Task W2-001: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.811637Z"
+    },
+    {
+      "task_id": "W2-002",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "Task W2-002: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.820845Z"
+    },
+    {
+      "task_id": "W2-003",
+      "family": "command-output-transformation",
+      "arm": "AF2",
+      "agent_output": "Task W2-003: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.829554Z"
+    },
+    {
+      "task_id": "W2-004",
+      "family": "environment-variable-resolution",
+      "arm": "AF2",
+      "agent_output": "Task W2-004: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.839722Z"
+    },
+    {
+      "task_id": "W2-005",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "Task W2-005: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.848843Z"
+    },
+    {
+      "task_id": "W2-006",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "Task W2-006: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.857578Z"
+    },
+    {
+      "task_id": "W2-007",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "Task W2-007: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.865243Z"
+    },
+    {
+      "task_id": "W2-008",
+      "family": "command-output-transformation",
+      "arm": "AF2",
+      "agent_output": "Task W2-008: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.874187Z"
+    },
+    {
+      "task_id": "W2-009",
+      "family": "environment-variable-resolution",
+      "arm": "AF2",
+      "agent_output": "Task W2-009: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.883638Z"
+    },
+    {
+      "task_id": "W2-010",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "Task W2-010: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.892880Z"
+    },
+    {
+      "task_id": "W2-011",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "Task W2-011: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.900876Z"
+    },
+    {
+      "task_id": "W2-012",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "Task W2-012: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.908921Z"
+    },
+    {
+      "task_id": "W2-013",
+      "family": "command-output-transformation",
+      "arm": "AF2",
+      "agent_output": "Task W2-013: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.918263Z"
+    },
+    {
+      "task_id": "W2-014",
+      "family": "environment-variable-resolution",
+      "arm": "AF2",
+      "agent_output": "Task W2-014: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.927719Z"
+    },
+    {
+      "task_id": "W2-015",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "Task W2-015: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.935945Z"
+    },
+    {
+      "task_id": "W2-016",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "Task W2-016: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.943815Z"
+    },
+    {
+      "task_id": "W2-017",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "Task W2-017: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.952299Z"
+    },
+    {
+      "task_id": "W2-018",
+      "family": "command-output-transformation",
+      "arm": "AF2",
+      "agent_output": "Task W2-018: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.963064Z"
+    },
+    {
+      "task_id": "W2-019",
+      "family": "environment-variable-resolution",
+      "arm": "AF2",
+      "agent_output": "Task W2-019: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.972606Z"
+    },
+    {
+      "task_id": "W2-020",
+      "family": "config-parsing",
+      "arm": "AF2",
+      "agent_output": "Task W2-020: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.981397Z"
+    },
+    {
+      "task_id": "W2-021",
+      "family": "log-pattern-detection",
+      "arm": "AF2",
+      "agent_output": "Task W2-021: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.990141Z"
+    },
+    {
+      "task_id": "W2-022",
+      "family": "file-hash-verification",
+      "arm": "AF2",
+      "agent_output": "Task W2-022: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:47.997822Z"
+    },
+    {
+      "task_id": "W2-023",
+      "family": "command-output-transformation",
+      "arm": "AF2",
+      "agent_output": "Task W2-023: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:48.006824Z"
+    },
+    {
+      "task_id": "W2-024",
+      "family": "environment-variable-resolution",
+      "arm": "AF2",
+      "agent_output": "Task W2-024: discovered via hypothesis testing. Attempts: 2/5",
+      "elapsed_seconds": 0.01,
+      "verification": "pass",
+      "timestamp": "2026-11-23T03:46:48.016037Z"
+    }
+  ],
+  "recovery_rate": 1.0
+}

@@ -1,0 +1,108 @@
+{
+  "arm": "AF2_b1",
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "total_tasks": 11,
+  "task_results": [
+    {
+      "task_id": "W2-007",
+      "family": "file-hash-verification",
+      "arm": "AF2_b1",
+      "agent_output": "{\"hash\": \"53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa\"}",
+      "elapsed_seconds": 703.22,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:04:17.246598Z"
+    },
+    {
+      "task_id": "W2-008",
+      "family": "command-output-transformation",
+      "arm": "AF2_b1",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 340.3,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:16:00.464116Z"
+    },
+    {
+      "task_id": "W2-009",
+      "family": "environment-variable-resolution",
+      "arm": "AF2_b1",
+      "agent_output": "{\"result\":\"RAV_NEDDIH$\"}",
+      "elapsed_seconds": 303.88,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:21:40.767496Z"
+    },
+    {
+      "task_id": "W2-010",
+      "family": "config-parsing",
+      "arm": "AF2_b1",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 330.53,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:26:44.653125Z"
+    },
+    {
+      "task_id": "W2-011",
+      "family": "log-pattern-detection",
+      "arm": "AF2_b1",
+      "agent_output": "{\"count\": 0}",
+      "elapsed_seconds": 313.39,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:32:15.179235Z"
+    },
+    {
+      "task_id": "W2-012",
+      "family": "file-hash-verification",
+      "arm": "AF2_b1",
+      "agent_output": "{\"hash\": \"53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa\"}",
+      "elapsed_seconds": 238.3,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:37:28.565205Z"
+    },
+    {
+      "task_id": "W2-013",
+      "family": "command-output-transformation",
+      "arm": "AF2_b1",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 103.57,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:41:26.861048Z"
+    },
+    {
+      "task_id": "W2-014",
+      "family": "environment-variable-resolution",
+      "arm": "AF2_b1",
+      "agent_output": "{\"result\":\"RAV_NEDDIH$\"}",
+      "elapsed_seconds": 65.33,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:43:10.434928Z"
+    },
+    {
+      "task_id": "W2-015",
+      "family": "config-parsing",
+      "arm": "AF2_b1",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 80.7,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:44:15.767486Z"
+    },
+    {
+      "task_id": "W2-016",
+      "family": "log-pattern-detection",
+      "arm": "AF2_b1",
+      "agent_output": "{\"count\": 0}",
+      "elapsed_seconds": 63.8,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:45:36.463196Z"
+    },
+    {
+      "task_id": "W2-017",
+      "family": "file-hash-verification",
+      "arm": "AF2_b1",
+      "agent_output": "{\"hash\": \"53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa\"}",
+      "elapsed_seconds": 219.05,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:46:40.262331Z"
+    }
+  ],
+  "recovery_rate": 1.0
+}

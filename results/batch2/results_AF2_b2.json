@@ -1,0 +1,72 @@
+{
+  "arm": "AF2_b2",
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "total_tasks": 7,
+  "task_results": [
+    {
+      "task_id": "W2-018",
+      "family": "command-output-transformation",
+      "arm": "AF2_b2",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 314.07,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:50:38.361984Z"
+    },
+    {
+      "task_id": "W2-019",
+      "family": "environment-variable-resolution",
+      "arm": "AF2_b2",
+      "agent_output": "{\"result\":\"RAV_NEDDIH$\"}",
+      "elapsed_seconds": 279.77,
+      "verification": "pass",
+      "timestamp": "2026-11-24T02:55:52.429493Z"
+    },
+    {
+      "task_id": "W2-020",
+      "family": "config-parsing",
+      "arm": "AF2_b2",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 298.27,
+      "verification": "pass",
+      "timestamp": "2026-11-24T03:00:32.197874Z"
+    },
+    {
+      "task_id": "W2-021",
+      "family": "log-pattern-detection",
+      "arm": "AF2_b2",
+      "agent_output": "{\"count\": 0}",
+      "elapsed_seconds": 279.93,
+      "verification": "pass",
+      "timestamp": "2026-11-24T03:05:30.468312Z"
+    },
+    {
+      "task_id": "W2-022",
+      "family": "file-hash-verification",
+      "arm": "AF2_b2",
+      "agent_output": "{\"hash\": \"53595000c4501fffb37a9e7b052007d19bf7b04c05c8f0f63d2ae782e83369fa\"}",
+      "elapsed_seconds": 417.05,
+      "verification": "pass",
+      "timestamp": "2026-11-24T03:10:10.397082Z"
+    },
+    {
+      "task_id": "W2-023",
+      "family": "command-output-transformation",
+      "arm": "AF2_b2",
+      "agent_output": "{\"value\": \"value_2022\"}",
+      "elapsed_seconds": 82.36,
+      "verification": "pass",
+      "timestamp": "2026-11-24T03:17:07.447235Z"
+    },
+    {
+      "task_id": "W2-024",
+      "family": "environment-variable-resolution",
+      "arm": "AF2_b2",
+      "agent_output": "{\"result\":\"RAV_NEDDIH$\"}",
+      "elapsed_seconds": 55.73,
+      "verification": "pass",
+      "timestamp": "2026-11-24T03:18:29.809262Z"
+    }
+  ],
+  "recovery_rate": 1.0
+}

@@ -26,16 +26,20 @@ Until that exists, Ali's question is unanswered and everything built is the inst
 
 ## Banked already (verified 2026-11-26, do not re-litigate)
 
-92 tests passing; 64 world-gate checks live on the rebuilt world (was 63/64 blocking);
-hash-chained receipts with 8 tests; arms at one shared `Budget`; the nemotron relay
-live-verified; World-1's 18/25 vs 17/25 reproduced from the committed attempts;
-World-2's 25/25 retracted to 0/25 by the repo's own grader.
+92 tests passing at plan time; **118 passing after Phase A**: 68 world-gate checks live on
+the rebuilt world; the independent solver reproduces 25/25 gold hashes from public
+files; the leakage guard returns 0 findings on the new artifacts; both runners refuse a
+gate-blocked world with exit 1 before any arm loads; hash-chained receipts with 8 tests;
+arms at one shared `Budget`; the nemotron relay live-verified; World-1's 18/25 vs 17/25
+reproduced from the committed attempts; World-2's 25/25 retracted to 0/25 by the repo's
+own grader. **Clean-room:** from `git archive HEAD` alone — 68/68 gates, 25/25 solver,
+118 tests, no working-tree or absolute-path dependency.
 
 ---
 
 ## The critical path — order matters, a row starts only when the row above passes
 
-### Phase A — finish the instrument (1 h 40 m; BLOCKS EVERYTHING)
+### Phase A — DONE (ef21429 → f256d5d; CHECKPOINT A passed 2026-11-26)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -45,8 +49,10 @@ World-2's 25/25 retracted to 0/25 by the repo's own grader.
 | A.5 | Family-overlap test in code: World 2 families ∩ World 1 families = ∅ | `pytest` green | 10 m |
 | A.6 | Rebuild the world from the seed; `bench.py` leakage guard on the new artifacts | **0 findings** | 10 m |
 
-**CHECKPOINT A — the world is safe to run on.** Stop here, show the gate report and
-the guard output, get the go-ahead before any relay money is spent.
+**CHECKPOINT A — the world is safe to run on. PASSED 2026-11-26.** Stop here, show
+the gate report and the guard output, get the go-ahead before any relay money is spent.
+(Passed: 68/68 gates, solver 25/25, guard 0 findings, both runners refuse exit 1,
+clean-room re-verify from `git archive HEAD` green.)
 
 ### Phase B — split, relay, parity closure (2 h 10 m; one external fetch)
 

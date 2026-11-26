@@ -22,13 +22,22 @@ clean shell. A step that cannot pass its verify is a bug report, not a bug worka
 | Parity launcher defect | `runner/run_arm.sh` **no longer exists** — the defect is retired by deletion; what remains is proving no reintroduced asymmetry (see 2.2) |
 | World-1 world data | **GONE** — both `world_manifest*.json` files are World-2 (`world2-20261120`); no `tasks_gold*` anywhere. Only recorded attempts survive: `results/world1/world1_A_B_results.jsonl` (per-task `task_pass`, `criteria_passed/total`, **no gold hashes**) |
 | Recovery metric | `runner/hypothesis.py:218` `recovery_rate()` = resolved-in-≤3-tests; consumed by `run_world.py:117` |
+| Recovery path's model | **`runner/hypothesis.py` calls `qwen2.5-coder:14b` over local Ollama** — a *different* model from the graded nemotron-relay path. A recovery number measured here describes a model the benchmark never claims. Fixed in D.1 |
+| `run_world.py` arm handling | **arm-name is a label only** — every arm runs the identical discovery→5-attempt-hypothesis→verify→grade pipeline. No per-arm model/prompt differentiation exists in this path |
+| World-1 evidence | Only `results/world1/world1_A_B_results.jsonl` exists anywhere: 50 rows (2 arms × 25 tasks), fields = task_id, family, task_pass, criteria_passed/total, valid_json, wall_s. **No** task prompts, world files, gold hashes, model outputs, or commands |
 | Arms/budget | `spec/arms.json`: one shared `Budget`, in-repo entrypoints, no shell-out |
 | Harness² | `harness2_adapter.py` at repo root |
 | Test suite | 92 passing, must run `-p no:hypothesispytest` (hypothesis 6.148.8 plugin crashes in terminal summary, post-run) |
 
 **What the World-1 evidence can and cannot support:**
 - CAN: offline re-verification of the 18/25 vs 17/25 summary from the recorded jsonl via `stats.py` (attempts are committed).
-- CANNOT: a live World-1 regression (no world data, no gold). Ali's answer question is answered on **World 2** instead, with the World-1 gap disclosed.
+- CANNOT: a live World-1 regression, for four independent reasons — (1) the **task
+  prompts** are not recorded anywhere (only `task_id` + `family` survive); (2) the
+  **world files** the arms read are not in any repo; (3) **no gold hashes** exist —
+  even a re-run of the same answers could not be graded; (4) the launcher and agents
+  that produced the results (`run_arm.sh`, the OmniCLI lineage) are gone.
+  Reconstructing any of those four **fabricates** the thing being measured. Ali's
+  question is answered on **World 2** instead, with the World-1 gap disclosed.
 
 ---
 
@@ -69,7 +78,12 @@ hashes prove it. A solver that shortcuts is a grader that lies.
 
 | # | Step | Verify | Est |
 |---|---|---|---|
-| D.1 | `harness/adversary.py`: deterministic contradiction injector (concept from `glass-box-alpha/devils_advocate`, **do not** absorb its LLM-agent class). Injects a detectable contradiction at a seeded point in the hypothesis cycle | same seed → same injection, byte-identical log | 30 m |
+| D.1 | **Re-point `runner/hypothesis.py`'s model at the relay** (`harness/model.py` + `spec/providers.json`, nemotron-3-ultra-550b-a55b) — recovery must be measured on the model under test, not on qwen over Ollama. Ollama path stays behind a `--local` debug flag only | engine runs a seeded task over the relay, key logged nowhere | 30 m |
+| D.2 | `harness/adversary.py`: deterministic contradiction injector (concept from `glass-box-alpha/devils_advocate`, **do not** absorb its LLM-agent class). Injects one detectable contradiction at a seeded evaluation inside the hypothesis cycle | same seed → same injection, byte-identical log | 30 m |
+| D.2b | **Apply to the HypothesisEngine path only** (where `recovery_rate()` is measured) — NOT to MINIMAL/GATED, which have no hypothesis cycles and would measure the adversary, not recovery. The control is a clean (un-injected) run of the same arm, same world, same budget — that pair is what makes recovery a measured McNemar comparison, not an anecdote | contradicted vs clean pair on one arm, budget equal | 10 m |
+| D.3 | Replace `recovery_rate()` with a **measured** counter: after injection, did the arm revise the hypothesis? (revised→recovered; unchanged→failed; blank→empty-answer rule). Keep the old metric printed as `legacy:` for comparability | an arm that ignores the contradiction is recorded as **not** recovered | 30 m |
+| D.4 | Self-verification in a clean sandbox against gold-independent evidence; no arm reads gold while self-verifying (gates already scan for this) | leakage scan of the self-verify sandbox: 0 findings | 20 m |
+| D.5 | Human-intervention audit: run log carries only harness-authored entries | a synthetic "human edit" to the log is detected | 10 m |
 | D.2 | Replace `recovery_rate()` with a **measured** counter: after injection, did the arm revise the hypothesis? (revised→recovered; unchanged→failed; blank→empty-answer rule). Keep the old metric printed as `legacy:` for comparability | an arm that ignores the contradiction is recorded as **not** recovered | 30 m |
 | D.3 | Self-verification in a clean sandbox against gold-independent evidence; no arm reads gold while self-verifying (gates already scan for this) | leakage scan of the self-verify sandbox: 0 findings | 20 m |
 | D.4 | Human-intervention audit: run log carries only harness-authored entries | a synthetic "human edit" to the log is detected | 10 m |

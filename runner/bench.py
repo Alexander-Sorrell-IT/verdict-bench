@@ -202,22 +202,51 @@ def check_prompt_for_leaks(prompt: str) -> List[str]:
     return []
 
 
+def _evidence_prefixes(manifest: Dict[str, Any]) -> List[str]:
+    """The files a task's own answer is legitimately derived from.
+
+    Per-task evidence is named for its task_id (world/paths.py convention), so
+    the manifest - which is public - says which files hold the data the answers
+    come FROM. A gold value inside a task's own evidence file is the task, not
+    a leak; the same value anywhere else is a finding.
+    """
+    prefixes = []
+    for task in manifest.get("tasks", []):
+        task_id = task.get("task_id")
+        if task_id:
+            prefixes.append(f"{task_id}.")
+    return prefixes
+
+
 def check_sandbox_for_gold(
-    sandbox: Path, gold: Dict[str, Any], max_bytes: int = 4_000_000
+    sandbox: Path,
+    gold: Dict[str, Any],
+    manifest: Dict[str, Any] | None = None,
+    max_bytes: int = 4_000_000,
 ) -> List[str]:
     """The arm must not be able to read gold from the world it is dropped into.
 
-    Scans the agent-visible tree for gold answer values and for gold-shaped filenames.
+    Scans the agent-visible tree for whole gold answers, gold hashes, and
+    gold-shaped filenames - plus gold VALUES outside the task's own evidence
+    files (a "find the value in the file" world has the value in the file by
+    design; a gate that rejected that would reject every legitimate world, so
+    the exemption is exactly the task's own evidence and nothing else).
     """
     leaks: List[str] = []
     if not sandbox.is_dir():
         return [f"sandbox does not exist: {sandbox}"]
 
-    # Whole canonical gold answers, and individual values long enough to be meaningful.
-    needles = [
-        canonical_answer(rec["gold_answer"])
+    # Whole canonical gold answers, the gold hashes, and individual values long
+    # enough to be meaningful.
+    needles: List[tuple] = [
+        ("a full gold answer", canonical_answer(rec["gold_answer"]))
         for rec in gold.values()
         if isinstance(rec.get("gold_answer"), dict)
+    ]
+    needles += [
+        ("a gold hash", str(rec["gold_hash"]))
+        for rec in gold.values()
+        if isinstance(rec.get("gold_hash"), str) and len(rec["gold_hash"]) >= 8
     ]
     values = [
         str(v)
@@ -226,6 +255,7 @@ def check_sandbox_for_gold(
         for v in rec["gold_answer"].values()
         if len(str(v)) >= MIN_GOLD_VALUE_LEN
     ]
+    exempt = _evidence_prefixes(manifest or {})
 
     for path in sorted(sandbox.rglob("*")):
         name = path.name.lower()
@@ -238,11 +268,13 @@ def check_sandbox_for_gold(
             text = path.read_text(errors="replace")
         except OSError:
             continue
-        for needle in needles:
+        for label, needle in needles:
             if needle and needle in text:
-                leaks.append(f"sandbox file {path.name} contains a full gold answer")
+                leaks.append(f"sandbox file {path.name} contains {label}")
                 break
         else:
+            if any(path.name.startswith(prefix) for prefix in exempt):
+                continue
             for value in values:
                 if value in text:
                     leaks.append(
@@ -265,7 +297,7 @@ def leakage_check(
         findings += check_task_for_leaks(task)
     for task in manifest.get("tasks", []):
         findings += check_prompt_for_leaks(prompt_of(task))
-    findings += check_sandbox_for_gold(sandbox, gold)
+    findings += check_sandbox_for_gold(sandbox, gold, manifest)
     return sorted(set(findings))
 
 

@@ -13,8 +13,11 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "runner"))
 
-from runner.bench import BenchmarkError, enforce_world_gates  # noqa: E402
+# Bare import, per setup.cfg: resolving bench.py under both "bench" and
+# "runner.bench" is the duplicate-module error mypy refuses.
+from bench import BenchmarkError, enforce_world_gates  # noqa: E402
 from world.paths import GOLD_PATH, WORLD_DIR  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent

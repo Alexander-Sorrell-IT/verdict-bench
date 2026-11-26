@@ -14,15 +14,19 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-GOLD_PATH = Path(__file__).resolve().parent / "gold_world2.json"
+# The withheld gold path convention lives in world/paths.py. Insert the repo root so
+# this file works both as `python -m world.grader` and as `python3 world/grader.py`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from world.paths import GOLD_PATH  # noqa: E402
 
 
 def load_gold() -> Dict[str, Any]:
     return json.loads(GOLD_PATH.read_text())
 
 
-def grade_task_output(task_id: str, agent_output: str,
-                      gold: Dict[str, Any]) -> Dict[str, Any]:
+def grade_task_output(
+    task_id: str, agent_output: str, gold: Dict[str, Any]
+) -> Dict[str, Any]:
     """Grade one task's agent output against gold."""
     answer = gold["answers"].get(task_id)
     if answer is None:
@@ -74,8 +78,7 @@ def grade_task_output(task_id: str, agent_output: str,
     }
 
 
-def grade_world(results_path: Path,
-                gold_path: Optional[Path] = None) -> Dict[str, Any]:
+def grade_world(results_path: Path, gold_path: Optional[Path] = None) -> Dict[str, Any]:
     """Grade all task results in a results file."""
     if gold_path is None:
         gold_path = GOLD_PATH
@@ -109,8 +112,7 @@ def grade_world(results_path: Path,
     }
 
 
-def write_grade_report(grade: Dict[str, Any],
-                       output_path: Path) -> Path:
+def write_grade_report(grade: Dict[str, Any], output_path: Path) -> Path:
     lines: List[str] = []
     lines.append("# Grading Report")
     lines.append("")
@@ -134,8 +136,11 @@ def write_grade_report(grade: Dict[str, Any],
 
 if __name__ == "__main__":
     import sys
+
     results_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results.json")
     grade = grade_world(results_path)
     rpt_path = write_grade_report(grade, Path("grading_report.md"))
-    print(f"Pass@1: {grade['pass_at_1']:.1%} ({grade['passed']}/{grade['total_tasks']})")
+    print(
+        f"Pass@1: {grade['pass_at_1']:.1%} ({grade['passed']}/{grade['total_tasks']})"
+    )
     print(f"Report written to {rpt_path}")

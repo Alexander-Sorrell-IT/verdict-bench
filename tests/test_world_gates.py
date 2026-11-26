@@ -1,7 +1,9 @@
 """World gates — a clean world passes, a contaminated one is refused.
 
-These gates are what the last benchmark did not have. The committed world fails five of
-them, which is exactly why its 25/25 was not a result.
+These gates are what the last benchmark did not have. Against the committed world the
+live run blocks on exactly one gate (`families` in the manifest) - the "five findings"
+figure was a fixture-only layout and was corrected in REMAINING_WORK.md. That one gate
+is what A.1 removes.
 """
 
 import json
@@ -44,7 +46,8 @@ def layout(tmp_path):
             }
         )
     )
-    (world_dir / "gold_world2.json").write_text(
+    (world_dir / "private").mkdir(parents=True)
+    (world_dir / "private" / "gold_world2.json").write_text(
         json.dumps(
             {
                 "answers": {
@@ -95,7 +98,7 @@ def test_a_derivable_value_in_a_public_file_is_not_a_leak(layout):
 
 def test_the_answer_key_in_a_public_file_is_blocking(layout):
     world_dir, sandbox_dir = layout
-    gold = (world_dir / "gold_world2.json").read_text()
+    gold = (world_dir / "private" / "gold_world2.json").read_text()
     (sandbox_dir / "leaked.txt").write_text(gold)
     _results, blocking = _run(layout)
     assert "leak:no-answer-key-in-public-tree" in blocking

@@ -23,6 +23,11 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# The gold path convention lives in world/paths.py. Insert the repo root so this file
+# works both as `python -m world.gates` and as `python3 world/gates.py`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from world.paths import GOLD_FILENAME, PRIVATE_DIRNAME  # noqa: E402
+
 # Keys that must never reach an agent, whatever file they are in.
 LEAKY_KEYS = frozenset(
     {
@@ -59,7 +64,9 @@ def check_world(
 ) -> Tuple[List[Dict[str, str]], List[str]]:
     """Run every world gate. Returns (results, blocking_failures)."""
     results: List[Dict[str, str]] = []
-    gold_path = gold_path or (world_dir / "gold_world2.json")
+    # Gold is withheld by default: it lives under the world's private root, never
+    # beside the manifest in the agent-visible tree.
+    gold_path = gold_path or (world_dir / PRIVATE_DIRNAME / GOLD_FILENAME)
 
     def record(name: str, ok: bool, detail: str = "") -> bool:
         results.append(

@@ -19,17 +19,20 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-WORLD_DIR = Path(__file__).resolve().parent
-FILES_DIR = WORLD_DIR / "world_files"
-FREEZE_PATH = WORLD_DIR / "FREEZE_world2.json"
-GOLD_PATH = WORLD_DIR / "gold_world2.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from world.paths import (  # noqa: E402
+    FILES_DIR,
+    FREEZE_PATH,
+    GOLD_PATH,
+    MANIFEST_PATH,
+    PRIVATE_ROOT,
+)
 
 # Task families for World 2 (unknown — model has never seen these)
 TASK_FAMILIES = [
@@ -101,30 +104,32 @@ def _generate_description(family: str, rng: random.Random) -> str:
         "config-parsing": (
             "There is a configuration file somewhere in the world_files directory. "
             "Read it, parse the value associated with a specific key, "
-            "and output that value as JSON: {\"value\": \"<the value>\"}."
+            'and output that value as JSON: {"value": "<the value>"}.'
         ),
         "log-pattern-detection": (
             "A log file exists somewhere in world_files. "
             "Search it for lines matching a specific pattern, count the matches, "
-            "and output the count as JSON: {\"count\": <number>}."
+            'and output the count as JSON: {"count": <number>}.'
         ),
         "file-hash-verification": (
             "Compute the SHA-256 hash of a specific file in world_files. "
-            "Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+            'Output the hash as JSON: {"hash": "<hex string>"}.'
         ),
         "command-output-transformation": (
             "Run a command, transform its output to uppercase, "
-            "and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+            'and output the result as JSON: {"transformed": "<UPPERCASE>"}.'
         ),
         "environment-variable-resolution": (
             "Read an environment variable, reverse its value, "
-            "and output the result as JSON: {\"result\": \"<reversed>\"}."
+            'and output the result as JSON: {"result": "<reversed>"}.'
         ),
     }
     return descriptions.get(family, "Complete the task.")
 
 
-def _generate_hidden_rules(family: str, rng: random.Random, task_idx: int = 0) -> Dict[str, Any]:
+def _generate_hidden_rules(
+    family: str, rng: random.Random, task_idx: int = 0
+) -> Dict[str, Any]:
     """Hidden rules the model must discover. Withheld from agent."""
     rules: Dict[str, Any] = {}
 
@@ -148,21 +153,6 @@ def _generate_hidden_rules(family: str, rng: random.Random, task_idx: int = 0) -
         rules["env_value"] = f"hidden_value_{rng.randint(1000, 9999)}"
 
     return rules
-
-
-def _generate_gold_answer(family: str, rng: random.Random) -> Dict[str, Any]:
-    """Compute the gold answer in code. Withheld from agent."""
-    if family == "config-parsing":
-        return {"value": f"value_{rng.randint(1000, 9999)}"}
-    elif family == "log-pattern-detection":
-        return {"count": rng.randint(1, 50)}
-    elif family == "file-hash-verification":
-        return {"hash": hashlib.sha256(b"hidden_file_content").hexdigest()}
-    elif family == "command-output-transformation":
-        return {"transformed": "HIDDEN_DATA_1234".upper()}
-    elif family == "environment-variable-resolution":
-        return {"result": "1234_lutav_dihw"}  # reversed
-    return {"answer": "unknown"}
 
 
 def _create_world_files(world: Dict[str, Any], seed: int) -> None:
@@ -209,7 +199,7 @@ def _create_world_files(world: Dict[str, Any], seed: int) -> None:
 
 def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
     """Build the complete world."""
-    world = {
+    world: Dict[str, Any] = {
         "world_id": f"world2-{seed}",
         "seed": seed,
         "num_tasks": num_tasks,
@@ -225,7 +215,8 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
     # Create the actual files so agents can find them
     _create_world_files(world, seed)
 
-    # Write gold (withheld from agent)
+    # Write gold (withheld from agent) - OUTSIDE the agent-visible tree
+    PRIVATE_ROOT.mkdir(parents=True, exist_ok=True)
     gold = {
         "world_id": world["world_id"],
         "seed": seed,
@@ -239,23 +230,21 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
     }
     GOLD_PATH.write_text(json.dumps(gold, indent=2))
 
-    # Write world manifest (what the agent sees — no gold)
+    # Write world manifest (what the agent sees — no gold, no taxonomy)
     manifest = {
         "world_id": world["world_id"],
         "seed": seed,
         "num_tasks": num_tasks,
-        "families": TASK_FAMILIES,
         "created_at": world["created_at"],
         "tasks": [
             {
                 "task_id": t["task_id"],
-                "family": t["family"],
                 "description": t["description"],
             }
             for t in world["tasks"]
         ],
     }
-    world_manifest_path = WORLD_DIR / "world_manifest.json"
+    world_manifest_path = MANIFEST_PATH
     world_manifest_path.write_text(json.dumps(manifest, indent=2))
 
     # Write freeze file (hash of world for integrity)
@@ -263,58 +252,26 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
         "world_id": world["world_id"],
         "seed": seed,
         "num_tasks": num_tasks,
-        "manifest_hash": hashlib.sha256(
-            world_manifest_path.read_bytes()
-        ).hexdigest(),
-        "gold_hash": hashlib.sha256(
-            GOLD_PATH.read_bytes()
-        ).hexdigest(),
+        "manifest_hash": hashlib.sha256(world_manifest_path.read_bytes()).hexdigest(),
+        "gold_hash": hashlib.sha256(GOLD_PATH.read_bytes()).hexdigest(),
         "frozen_at": datetime.now(timezone.utc).isoformat() + "Z",
     }
     FREEZE_PATH.write_text(json.dumps(freeze, indent=2))
 
     print(f"World {world['world_id']} built with {num_tasks} tasks")
-    print(f"  Manifest: {world_manifest_path}")
-    print(f"  Files: {FILES_DIR}")
+    print(f"  Manifest (agent-visible): {world_manifest_path}")
+    print(f"  Files (agent-visible): {FILES_DIR}")
     print(f"  Gold (withheld): {GOLD_PATH}")
-    print(f"  Freeze: {FREEZE_PATH}")
+    print(f"  Freeze (withheld): {FREEZE_PATH}")
     return world
-
-
-def independent_solver(world_path: Path, gold_path: Path) -> Dict[str, Any]:
-    """
-    Independent solver that reads ONLY public files and reproduces gold.
-    No LLM judge — pure code verification.
-    """
-    world = json.loads(world_path.read_text())
-    gold = json.loads(gold_path.read_text())
-
-    results = {"total": 0, "solved": 0, "details": []}
-
-    for task in world["tasks"]:
-        task_id = task["task_id"]
-        family = task["family"]
-
-        expected_hash = gold["answers"][task_id]["gold_hash"]
-
-        solved = False  # placeholder — real solver would attempt
-
-        results["total"] += 1
-        if solved:
-            results["solved"] += 1
-        results["details"].append({
-            "task_id": task_id,
-            "family": family,
-            "solved": solved,
-            "expected_hash": expected_hash,
-        })
-
-    return results
 
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Build unknown-world verdict-bench world")
+
+    parser = argparse.ArgumentParser(
+        description="Build unknown-world verdict-bench world"
+    )
     parser.add_argument("--seed", type=int, default=20261120, help="World seed")
     parser.add_argument("--num-tasks", type=int, default=25, help="Number of tasks")
     args = parser.parse_args()

@@ -2,138 +2,106 @@
   "world_id": "world2-20261120",
   "seed": 20261120,
   "num_tasks": 25,
-  "families": [
-    "config-parsing",
-    "log-pattern-detection",
-    "file-hash-verification",
-    "command-output-transformation",
-    "environment-variable-resolution"
-  ],
-  "created_at": "2026-11-24T07:01:30.680939+00:00Z",
+  "created_at": "2026-11-26T19:50:05.353398+00:00Z",
   "tasks": [
     {
       "task_id": "W2-000",
-      "family": "config-parsing",
       "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
     },
     {
       "task_id": "W2-001",
-      "family": "log-pattern-detection",
       "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
     },
     {
       "task_id": "W2-002",
-      "family": "file-hash-verification",
       "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
     },
     {
       "task_id": "W2-003",
-      "family": "command-output-transformation",
       "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
     },
     {
       "task_id": "W2-004",
-      "family": "environment-variable-resolution",
       "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
     },
     {
       "task_id": "W2-005",
-      "family": "config-parsing",
       "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
     },
     {
       "task_id": "W2-006",
-      "family": "log-pattern-detection",
       "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
     },
     {
       "task_id": "W2-007",
-      "family": "file-hash-verification",
       "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
     },
     {
       "task_id": "W2-008",
-      "family": "command-output-transformation",
       "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
     },
     {
       "task_id": "W2-009",
-      "family": "environment-variable-resolution",
       "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
     },
     {
       "task_id": "W2-010",
-      "family": "config-parsing",
       "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
     },
     {
       "task_id": "W2-011",
-      "family": "log-pattern-detection",
       "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
     },
     {
       "task_id": "W2-012",
-      "family": "file-hash-verification",
       "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
     },
     {
       "task_id": "W2-013",
-      "family": "command-output-transformation",
       "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
     },
     {
       "task_id": "W2-014",
-      "family": "environment-variable-resolution",
       "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
     },
     {
       "task_id": "W2-015",
-      "family": "config-parsing",
       "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
     },
     {
       "task_id": "W2-016",
-      "family": "log-pattern-detection",
       "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
     },
     {
       "task_id": "W2-017",
-      "family": "file-hash-verification",
       "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
     },
     {
       "task_id": "W2-018",
-      "family": "command-output-transformation",
       "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
     },
     {
       "task_id": "W2-019",
-      "family": "environment-variable-resolution",
       "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
     },
     {
       "task_id": "W2-020",
-      "family": "config-parsing",
       "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
     },
     {
       "task_id": "W2-021",
-      "family": "log-pattern-detection",
       "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
     },
     {
       "task_id": "W2-022",
-      "family": "file-hash-verification",
       "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
     },
     {
       "task_id": "W2-023",
-      "family": "command-output-transformation",
       "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
     },
     {
       "task_id": "W2-024",
-      "family": "environment-variable-resolution",
       "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
     }
   ]

@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -179,21 +181,27 @@ def _retry_write(operation: Any, what: str, attempts: int = 5) -> Any:
     raise last_error  # type: ignore[misc]
 
 
-def prompt_for(task: Dict[str, Any]) -> str:
-    """The prompt every arm sees for a task.
+def prompt_for(task: Dict[str, Any], sandbox: Any = None) -> str:
+    """The prompt the arm's model actually sees - not a string near it.
 
     The manifest names each task's evidence file (the plan's design, and the
-    fix for the live run that catted the first file of the right shape). The
-    bench path must deliver it exactly as run_world does: without it an arm
-    sees 25 identical-description tasks and 25 files with no way to correlate
-    them, explores for confirmation it can never get, and scores zero while
-    having already read the right file.
+    fix for the live run that catted the first file of the right shape): the
+    bench path must deliver it exactly as run_world does, or an arm sees 25
+    identical-description tasks and 25 files with no way to correlate them,
+    explores for confirmation it can never get, and scores zero while having
+    already read the right file.
+
+    The guard used to scan task["description"] while the model saw
+    _task_prompt(description) - a gate that cannot see what it protects is
+    theatre (ground rule 3), so this renders the arm's real prompt.
     """
+    from harness.minimal_arm import _task_prompt
+
     description = task["description"]
     evidence = task.get("evidence_file")
     if evidence:
         description += f"\n\nYour task's evidence file is world_files/{evidence}."
-    return description
+    return _task_prompt(description, Path(str(sandbox or "world/world_files")))
 
 
 def task_for_arm(task: Dict[str, Any]) -> Dict[str, Any]:
@@ -204,6 +212,22 @@ def task_for_arm(task: Dict[str, Any]) -> Dict[str, Any]:
     augmented = dict(task)
     augmented["description"] = prompt_for(task)
     return augmented
+
+
+def _sandbox_copy(sandbox: Path) -> Path:
+    """A private copy of the agent-visible tree for the run.
+
+    The default --sandbox is the committed world/world_files tree itself.
+    MINIMAL has no SandboxGate and echo/redirection are whitelisted, so an arm
+    write during a run would mutate the FROZEN world mid-run. The freeze's
+    hash would catch it - loudly, after the damage - but the failure mode
+    should not exist: the run works in a copy, the way run_world's engine
+    already does (hypothesis.build_sandbox).
+    """
+    copy = Path(tempfile.mkdtemp(prefix="verdict-run-sandbox-"))
+    target = copy / "world_files"
+    shutil.copytree(sandbox, target)
+    return target
 
 
 def _run_once(
@@ -248,6 +272,9 @@ def _run_once(
     budget = bench.Budget(**spec["budget"])
 
     enforce_world_gates(Path(manifest_path).resolve().parent, sandbox, Path(gold_path))
+    # The run works in a copy of the agent-visible tree: an arm write must not
+    # be able to mutate the frozen world mid-run.
+    run_sandbox = _sandbox_copy(Path(sandbox))
     enforce_freeze(
         BENCH_DIR / "spec" / "split.json",
         record_path=freeze_record or (BENCH_DIR / "spec" / "frozen_run.json"),
@@ -283,14 +310,16 @@ def _run_once(
                 manifest,
                 answers,
                 budget,
-                sandbox,
-                prompt_for,
+                run_sandbox,
+                lambda task: prompt_for(task, run_sandbox),
                 client,
             )
             for attempt, grade in zip(report.attempts, report.grades):
                 row = {
                     "arm": arm_name,
                     "task_id": attempt.task_id,
+                    "stopped_reason": getattr(attempt, "stopped_reason", ""),
+                    "gate_blocks": getattr(attempt, "gate_blocks", []),
                     "family": getattr(attempt, "family", "unknown"),
                     "rep": 1,
                     "task_pass": grade.passed,
@@ -311,6 +340,7 @@ def _run_once(
                 receipt_task_grade(
                     chain, arm_name, attempt.task_id, grade.passed, grade.reason
                 )
+    shutil.rmtree(run_sandbox.parent, ignore_errors=True)
     verdict = grade_run(rows_path, Path(gold_path), target=target)
     return {
         "status": "ran",

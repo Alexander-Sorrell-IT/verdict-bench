@@ -1,0 +1,266 @@
+{
+  "salt": "verdict-bench:v1",
+  "rows": [
+    {
+      "seq": 0,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "kind": "run_manifest",
+      "kind_detail": "h2_world",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "probes": "3",
+      "provider": "default",
+      "hash": "7cfb80cc46e7c9d5458c3b0edfc4b31c6dffdf6b30d0f35a48c744e714373a93"
+    },
+    {
+      "seq": 1,
+      "prev_hash": "7cfb80cc46e7c9d5458c3b0edfc4b31c6dffdf6b30d0f35a48c744e714373a93",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-003",
+      "hash": "aae0ee110ee5ca793190e1dab30a5d80fafa59f172b54af26c8560e7da04acf9"
+    },
+    {
+      "seq": 2,
+      "prev_hash": "aae0ee110ee5ca793190e1dab30a5d80fafa59f172b54af26c8560e7da04acf9",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-008",
+      "hash": "5f818a285e38011d505529c5f6fbf19bdb9c4dbef01324d3287389dca62fb87f"
+    },
+    {
+      "seq": 3,
+      "prev_hash": "5f818a285e38011d505529c5f6fbf19bdb9c4dbef01324d3287389dca62fb87f",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-013",
+      "hash": "0867ea175849b5ee2c9657da8501883b57ce42dbc1abee1d42791f91629b0516"
+    },
+    {
+      "seq": 4,
+      "prev_hash": "0867ea175849b5ee2c9657da8501883b57ce42dbc1abee1d42791f91629b0516",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-018",
+      "hash": "6b4691710d39eb38ab129334c3972c886863720712cfb029d0b743bbea5ee9d5"
+    },
+    {
+      "seq": 5,
+      "prev_hash": "6b4691710d39eb38ab129334c3972c886863720712cfb029d0b743bbea5ee9d5",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-023",
+      "hash": "efce0c1d9cf631b00cb8bd5ccf5c773f6f6f9928f5842a2021e276e8c39154d3"
+    },
+    {
+      "seq": 6,
+      "prev_hash": "efce0c1d9cf631b00cb8bd5ccf5c773f6f6f9928f5842a2021e276e8c39154d3",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-000",
+      "hash": "bec97f594680034ea26218cf7ce2ca4a716265c51e9aa8f41e29fe34154ecdbf"
+    },
+    {
+      "seq": 7,
+      "prev_hash": "bec97f594680034ea26218cf7ce2ca4a716265c51e9aa8f41e29fe34154ecdbf",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-005",
+      "hash": "f6f7d8829e05b836b296fd80f7a098a5defdf8f825e7a5cffa6ed8bf2cc0be44"
+    },
+    {
+      "seq": 8,
+      "prev_hash": "f6f7d8829e05b836b296fd80f7a098a5defdf8f825e7a5cffa6ed8bf2cc0be44",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-010",
+      "hash": "32f4b01dfede7fb19623cd21ef2bdcbf5c6309ce86805d8b1f40d59096017b09"
+    },
+    {
+      "seq": 9,
+      "prev_hash": "32f4b01dfede7fb19623cd21ef2bdcbf5c6309ce86805d8b1f40d59096017b09",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-015",
+      "hash": "0c423341de9bd470e9f3e4cd1a2fb7dc4d1509563200144c2498a017eb52613d"
+    },
+    {
+      "seq": 10,
+      "prev_hash": "0c423341de9bd470e9f3e4cd1a2fb7dc4d1509563200144c2498a017eb52613d",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-020",
+      "hash": "83d3cb12d31aed2c21f0749b1150331be55f8b466160a64f01f29e306e527069"
+    },
+    {
+      "seq": 11,
+      "prev_hash": "83d3cb12d31aed2c21f0749b1150331be55f8b466160a64f01f29e306e527069",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-004",
+      "hash": "b686ece93fd4cb7e999270069687f33d3dbb2dc3c8ccf5b2a42ae7bda66f7f73"
+    },
+    {
+      "seq": 12,
+      "prev_hash": "b686ece93fd4cb7e999270069687f33d3dbb2dc3c8ccf5b2a42ae7bda66f7f73",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-009",
+      "hash": "fa29367bf9404fd7df793fa12f98817257e22cc23a180c036aac17ce1645890e"
+    },
+    {
+      "seq": 13,
+      "prev_hash": "fa29367bf9404fd7df793fa12f98817257e22cc23a180c036aac17ce1645890e",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-014",
+      "hash": "d56a5216049760c0bb90d517a5256510bda98c1c114d1b29df59eae77b46f831"
+    },
+    {
+      "seq": 14,
+      "prev_hash": "d56a5216049760c0bb90d517a5256510bda98c1c114d1b29df59eae77b46f831",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-019",
+      "hash": "13dfc8ea3fd8dd4e050cbbb45f59dfc3df856a149531f5be4a98bf9554f9a220"
+    },
+    {
+      "seq": 15,
+      "prev_hash": "13dfc8ea3fd8dd4e050cbbb45f59dfc3df856a149531f5be4a98bf9554f9a220",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-024",
+      "hash": "1b95defe6fc11d488e3f35ac478b5bb2ca950ea5ce39d59b20b7e8ed0d77af48"
+    },
+    {
+      "seq": 16,
+      "prev_hash": "1b95defe6fc11d488e3f35ac478b5bb2ca950ea5ce39d59b20b7e8ed0d77af48",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-002",
+      "hash": "d8dec4041a7c732527359a965774b149bbd8a74c11406e1d45400a1051e1ad6e"
+    },
+    {
+      "seq": 17,
+      "prev_hash": "d8dec4041a7c732527359a965774b149bbd8a74c11406e1d45400a1051e1ad6e",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-007",
+      "hash": "9ad6eefab2716956463351ad09cfa1e9a69813abb1a5925fd8757c803cab19c2"
+    },
+    {
+      "seq": 18,
+      "prev_hash": "9ad6eefab2716956463351ad09cfa1e9a69813abb1a5925fd8757c803cab19c2",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-012",
+      "hash": "4cfb31be59347b61de8e603ed1fbb42a8e5d5407dd377bf0f88af595927c60b8"
+    },
+    {
+      "seq": 19,
+      "prev_hash": "4cfb31be59347b61de8e603ed1fbb42a8e5d5407dd377bf0f88af595927c60b8",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-017",
+      "hash": "65a5699df55afbd3148d052e9485bb4637e9e61823b48feb9d91e41591a747d0"
+    },
+    {
+      "seq": 20,
+      "prev_hash": "65a5699df55afbd3148d052e9485bb4637e9e61823b48feb9d91e41591a747d0",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-022",
+      "hash": "dc311e64ef4c90709aa60fb8a4d7c89e697025e78218508337f3d4c45f06eb9a"
+    },
+    {
+      "seq": 21,
+      "prev_hash": "dc311e64ef4c90709aa60fb8a4d7c89e697025e78218508337f3d4c45f06eb9a",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-001",
+      "hash": "915af9e43773bc09115eb84c8f89d2c425445b9710a96ab4ec2d80926996e705"
+    },
+    {
+      "seq": 22,
+      "prev_hash": "915af9e43773bc09115eb84c8f89d2c425445b9710a96ab4ec2d80926996e705",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-006",
+      "hash": "4cfa083361a21350486c6b1f6cca5a2520787cf380e5b6235bfe690afcfe805c"
+    },
+    {
+      "seq": 23,
+      "prev_hash": "4cfa083361a21350486c6b1f6cca5a2520787cf380e5b6235bfe690afcfe805c",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-011",
+      "hash": "d414e5be3fa8400043610db1ad1157a9b7b3502f21a64bc00847c8b3bed62cf7"
+    },
+    {
+      "seq": 24,
+      "prev_hash": "d414e5be3fa8400043610db1ad1157a9b7b3502f21a64bc00847c8b3bed62cf7",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-016",
+      "hash": "56795aa2eefc9630fbdb11dbbbd461a63492e18c44c59ceb12e919b66b9c25e8"
+    },
+    {
+      "seq": 25,
+      "prev_hash": "56795aa2eefc9630fbdb11dbbbd461a63492e18c44c59ceb12e919b66b9c25e8",
+      "arm": "C",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "hash mismatch, no gold values found",
+      "task_id": "W2-021",
+      "hash": "9421193a29077b93dc2fdd67abfd47d4982534a73bbc28c7b39ce64dd8941b85"
+    }
+  ]
+}

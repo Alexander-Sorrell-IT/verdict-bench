@@ -1,0 +1,12 @@
+{
+  "arm": "C",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "base_url": "https://integrate.api.nvidia.com/v1",
+  "probes": 3,
+  "receipts_ok": true,
+  "model_calls": 193,
+  "wall_s": 696.0,
+  "passed": 3,
+  "total": 25,
+  "rows": "results/E3-harness2/results.jsonl"
+}

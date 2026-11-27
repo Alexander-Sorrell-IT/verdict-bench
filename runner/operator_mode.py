@@ -214,21 +214,24 @@ def _run_once(
     )
 
     rows: List[Dict[str, Any]] = []
-    for arm_name, entrypoint in spec["arms"].items():
-        runner = resolve_runner(entrypoint)
-        report = run_arm(
-            arm_name,
-            runner,
-            manifest,
-            answers,
-            budget,
-            sandbox,
-            lambda task: task["description"],
-            client,
-        )
-        for attempt, grade in zip(report.attempts, report.grades):
-            rows.append(
-                {
+    # Rows are written per task, not at the end: a run that is killed mid-way
+    # (a timeout, a Ctrl-C) leaves its evidence on disk, the same way the
+    # receipt chain already does.
+    with rows_path.open("w") as rows_handle:
+        for arm_name, entrypoint in spec["arms"].items():
+            runner = resolve_runner(entrypoint)
+            report = run_arm(
+                arm_name,
+                runner,
+                manifest,
+                answers,
+                budget,
+                sandbox,
+                lambda task: task["description"],
+                client,
+            )
+            for attempt, grade in zip(report.attempts, report.grades):
+                row = {
                     "arm": arm_name,
                     "task_id": attempt.task_id,
                     "family": getattr(attempt, "family", "unknown"),
@@ -242,14 +245,12 @@ def _run_once(
                     "base_url": client.base_url,
                     "reason": grade.reason,
                 }
-            )
-            receipt_task_grade(
-                chain, arm_name, attempt.task_id, grade.passed, grade.reason
-            )
-
-    rows_path.write_text(
-        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows)
-    )
+                rows.append(row)
+                rows_handle.write(json.dumps(row, sort_keys=True) + "\n")
+                rows_handle.flush()
+                receipt_task_grade(
+                    chain, arm_name, attempt.task_id, grade.passed, grade.reason
+                )
     verdict = grade_run(rows_path, Path(gold_path), target=target)
     return {
         "status": "ran",

@@ -1,91 +1,183 @@
 #!/usr/bin/env python3
 # verdict-bench runner/hypothesis.py
 #
-# Hypothesis Layer — for truly unknown worlds.
+# Hypothesis Layer - for truly unknown worlds.
 #
-# Uses OmniCLI-style model calling with retry + sanitization.
-# The model proposes single commands, executes them, evaluates results,
-# and recovers when wrong — following AF2's propose → gate → verify pattern.
+# propose -> gate -> execute -> evaluate, one loop, and every verdict recorded:
+# the model proposes ONE shell command, the command runs inside a sandbox, the
+# model evaluates the result, and the loop repeats until the model commits an
+# ANSWER or the attempts run out. An unresolved task returns None - a failed
+# arm returns an empty answer, never a fabricated one.
 #
-# Produces hypothesis_log.md — every hypothesis, test, result, correction.
+# What this file used to do, and why it was rewritten (D.1):
+#   * it called qwen2.5-coder over local Ollama - a different model from the
+#     graded nemotron-relay path, so any number it produced described a model
+#     the benchmark never claims. The client now comes from spec/providers.json
+#     through harness/keys.py; Ollama survives behind --local for debugging.
+#   * its prompt shipped "MANDATORY COMMANDS FOR EACH TASK TYPE (copy exactly)"
+#     with per-family command pipelines - the exact token that invalidated the
+#     committed 25/25, plus the family taxonomy A.1 removed from the manifest.
+#     A prompt that hands over the answer formula measures nothing.
+#   * it executed each command twice (a copy-paste defect: two execute_command
+#     calls back to back), it reached into engine._current, it carried ~25
+#     debug prints, and it auto-accepted any stdout that parsed as JSON as the
+#     answer - family-blind fabrication.
+#   * it ran commands with cwd=WORLD_DIR, the directory that holds the withheld
+#     private root: the arm could read the gold. Commands now run in a sandbox
+#     (world_files + manifest copied out), and commands that try to leave it
+#     (.., absolute paths, private) are refused before execution.
 
 from __future__ import annotations
 
 import json
-import os
+import shutil
 import subprocess
 import sys
-import time
-from datetime import datetime
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import requests
+BENCH_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BENCH_DIR))
+sys.path.insert(0, str(BENCH_DIR / "harness"))
 
-# Absolute world dir — a relative cwd leaks world files into whatever directory
-# the runner happens to be launched from.
-VERDICT_BENCH_DIR = Path(__file__).resolve().parent.parent
-WORLD_DIR = VERDICT_BENCH_DIR / "world"
+from harness.keys import (  # noqa: E402
+    default_provider_id,
+    load_providers,
+    resolve_api_key,
+)
+from harness.model import ModelClient, ModelError  # noqa: E402
 
-HYPOTHESIS_LOG_PATH = Path("hypothesis_log.md")
-OLLAMA_URL = "http://127.0.0.1:11434/v1/chat/completions"
-OLLAMA_MODEL = "qwen2.5-coder:14b"
+WORLD_DIR = BENCH_DIR / "world"
 MAX_RETRIES = 3
 
+# The commands an arm may propose. Everything else is refused before execution:
+# no interpreters (a shell one-liner is not a benchmark answer), no traversal.
+COMMAND_WHITELIST = (
+    "ls",
+    "find",
+    "cat",
+    "grep",
+    "head",
+    "tail",
+    "awk",
+    "sed",
+    "cut",
+    "sort",
+    "uniq",
+    "wc",
+    "tr",
+    "rev",
+    "sha256sum",
+    "echo",
+    "cd",
+    "pwd",
+)
+FORBIDDEN_FRAGMENTS = ("..", "/world/private", "private/", "gold_world")
 
-def call_model(prompt: str, max_tokens: int = 200, retries: int = MAX_RETRIES) -> str:
-    """Call a model through Ollama with OmniCLI-style retry handling."""
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "model": OLLAMA_MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are an agent in an unknown environment. Discover how it works by running shell commands. Output ONLY the next shell command to run. No explanations, no markdown, no JSON, just the command. If you output anything other than a shell command, your response will be rejected.",
-            },
+SYSTEM_PROMPT = (
+    "You are an agent in an unknown environment. Discover how it works by "
+    "running shell commands. Output ONLY the next shell command to run - no "
+    "explanations, no markdown, no JSON. If you output anything else, your "
+    "response is rejected."
+)
+
+
+# ------------------------------------------------------------------ model access
+
+
+def local_client() -> ModelClient:
+    """The debug path: local Ollama. Never the graded route."""
+    return ModelClient(
+        base_url="http://127.0.0.1:11434/v1",
+        api_key="ollama",
+        model="qwen2.5-coder:14b",
+    )
+
+
+def relay_client() -> ModelClient:
+    """The graded route: the shared relay's default provider and model."""
+    providers_path = BENCH_DIR / "spec" / "providers.json"
+    providers = load_providers(providers_path)
+    provider_id = default_provider_id(providers_path)
+    if not provider_id or provider_id not in providers:
+        raise ModelError(f"no default provider in {providers_path}")
+    provider = providers[provider_id]
+    if not provider.default_model:
+        raise ModelError(f"provider {provider_id!r} names no default model")
+    return ModelClient(
+        base_url=provider.base_url,
+        api_key=resolve_api_key(provider),
+        model=provider.default_model,
+    )
+
+
+def call_model(prompt: str, client: ModelClient, max_tokens: int = 500) -> str:
+    """One model call. Retries live inside the client; a dead endpoint raises,
+    and the caller records the attempt honestly.
+
+    The default allowance is deliberately generous: the graded model is a
+    REASONING model, and at ~200 tokens it can spend the whole budget thinking
+    and return a blank completion - which ModelClient refuses to fabricate
+    around, ending the attempt honestly. Budget here is not a tuning knob; it
+    is the difference between measuring the model and measuring the truncation.
+    """
+    return client.complete(
+        [
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.0,
-        "max_tokens": max_tokens,
-    }
+        max_tokens=max_tokens,
+    )
 
-    last_error = ""
-    for attempt in range(retries):
-        try:
-            t0 = time.time()
-            print(f"  [DEBUG] call_model attempt {attempt+1}/{retries}", flush=True)
-            r = requests.post(
-                OLLAMA_URL, headers=headers, json=payload, timeout=(30, 300)
-            )
-            print(f"  [DEBUG] request completed in {time.time() - t0:.1f}s", flush=True)
-            r.raise_for_status()
-            data = r.json()
-            message = data.get("choices", [{}])[0].get("message", {})
-            content = message.get("content", "")
-            reasoning = message.get("reasoning", "")
-            # qwen2.5-coder is not a reasoning model - content should be present
-            output = content if content and content.strip() else reasoning
-            if output and output.strip():
-                return output.strip()
-            payload["max_tokens"] = min(max_tokens * 2, 8192)
-            last_error = "empty content"
-        except requests.exceptions.Timeout:
-            last_error = f"timeout (attempt {attempt + 1}/{retries})"
-            time.sleep(1)
-        except requests.exceptions.ConnectionError as exc:
-            last_error = f"connection error: {exc}"
-            time.sleep(1)
-        except Exception as exc:  # noqa: BLE001
-            last_error = f"error: {exc}"
-            time.sleep(1)
 
-    return f"ERROR: model call failed after {retries} attempts: {last_error}"
+# ------------------------------------------------------------------ sandbox
+
+
+def build_sandbox(world_dir: Path = WORLD_DIR) -> Path:
+    """A sandbox holding exactly the agent-visible tree: world_files and the
+    manifest. The withheld private root stays where it is - outside."""
+    sandbox = Path(tempfile.mkdtemp(prefix="verdict-sandbox-"))
+    shutil.copytree(world_dir / "world_files", sandbox / "world_files")
+    shutil.copy(world_dir / "world_manifest.json", sandbox / "world_manifest.json")
+    return sandbox
+
+
+def cleanup_sandbox(sandbox: Optional[Path]) -> None:
+    if sandbox is not None and sandbox.is_dir():
+        shutil.rmtree(sandbox, ignore_errors=True)
+
+
+def extract_command(reply: str) -> Optional[str]:
+    """The first whitelisted command in a model reply, or None.
+
+    Refuses traversal and private-root fragments before anything executes: the
+    sandbox is the tree the arm may read, and a command that tries to leave it
+    is not a command, it is an exfiltration attempt.
+    """
+    text = reply.replace("```", "").replace("`", "").strip()
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # The arm's world is the sandbox: absolute paths and home-relative paths
+        # are escapes, and private-root fragments are the gold. Both refused,
+        # wherever they appear in the command.
+        tokens = line.split()
+        if any(token.startswith(("/", "~")) for token in tokens):
+            return None
+        if any(fragment in line for fragment in FORBIDDEN_FRAGMENTS):
+            return None
+        if tokens and tokens[0] in COMMAND_WHITELIST:
+            return line
+    return None
 
 
 def execute_command(
     cmd: str, timeout: int = 30, cwd: Optional[Path] = None
 ) -> Dict[str, Any]:
-    """Execute a shell command and return structured result."""
+    """Execute one command inside the sandbox and return the structured result."""
     try:
         result = subprocess.run(
             cmd, shell=True, capture_output=True, text=True, timeout=timeout, cwd=cwd
@@ -105,7 +197,7 @@ def execute_command(
             "stderr": f"timeout after {timeout}s",
             "ok": False,
         }
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 - a dead command ends the attempt
         return {
             "cmd": cmd,
             "exit_code": -3,
@@ -115,17 +207,20 @@ def execute_command(
         }
 
 
+# ------------------------------------------------------------------ the record
+
+
 class HypothesisCycle:
-    """One hypothesis → test → result → correction cycle."""
+    """One hypothesis -> test -> correction cycle."""
 
     def __init__(self, hypothesis: str, task_id: str):
         self.hypothesis = hypothesis
         self.task_id = task_id
         self.tests: List[Dict[str, Any]] = []
-        self.corrections: List[str] = []
+        self.corrections: List[Dict[str, str]] = []
         self.resolved = False
         self.final_answer: Optional[str] = None
-        self.created_at = datetime.now().isoformat() + "Z"
+        self.created_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_test(
         self, action: str, result: Dict[str, Any], matches_expectation: bool
@@ -133,7 +228,7 @@ class HypothesisCycle:
         self.tests.append(
             {
                 "action": action,
-                "timestamp": datetime.now().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
                 "result": result,
                 "matches_expectation": matches_expectation,
             }
@@ -143,7 +238,7 @@ class HypothesisCycle:
         self.corrections.append(
             {
                 "correction": correction,
-                "timestamp": datetime.now().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         )
 
@@ -175,38 +270,20 @@ class HypothesisCycle:
 class HypothesisEngine:
     """Manages hypothesis cycles for unknown-world tasks."""
 
-    def __init__(self, log_path: Path = HYPOTHESIS_LOG_PATH):
+    def __init__(self, log_path: Path = Path("hypothesis_log.md")):
         self.log_path = log_path
         self.cycles: List[HypothesisCycle] = []
-        self._current: Optional[HypothesisCycle] = None
 
     def start_cycle(self, hypothesis: str, task_id: str) -> HypothesisCycle:
         cycle = HypothesisCycle(hypothesis, task_id)
-        self._current = cycle
         self.cycles.append(cycle)
         return cycle
-
-    def test(
-        self, action: str, result: Dict[str, Any], matches_expectation: bool
-    ) -> None:
-        if self._current is not None:
-            self._current.add_test(action, result, matches_expectation)
-
-    def correct(self, correction: str) -> None:
-        if self._current is not None:
-            self._current.add_correction(correction)
-
-    def resolve(self, final_answer: Optional[str] = None) -> None:
-        if self._current is not None:
-            self._current.resolved = True
-            self._current.final_answer = final_answer
-            self._current = None
 
     def write_log(self) -> Path:
         lines: List[str] = []
         lines.append("# Hypothesis Log")
         lines.append("")
-        lines.append(f"Generated: {datetime.now().isoformat() + 'Z'}")
+        lines.append(f"Generated: {datetime.now(timezone.utc).isoformat() + 'Z'}")
         lines.append(f"Total cycles: {len(self.cycles)}")
         lines.append(f"Resolved: {sum(1 for c in self.cycles if c.resolved)}")
         lines.append("")
@@ -216,13 +293,93 @@ class HypothesisEngine:
         return self.log_path
 
     def recovery_rate(self) -> float:
+        """LEGACY metric: cycles resolved within <=3 tests. Kept for
+        comparability with the recorded World-1 attempts; the measured
+        recovery counter (D.4) replaces it and prints this as `legacy:`."""
         if not self.cycles:
             return 1.0
         recovered = 0
-        for c in self.cycles:
-            if c.resolved and len(c.tests) <= 3:
+        for cycle in self.cycles:
+            if cycle.resolved and len(cycle.tests) <= 3:
                 recovered += 1
         return recovered / len(self.cycles)
+
+
+# ------------------------------------------------------------------ the loop
+
+
+def _propose_prompt(
+    task_description: str,
+    discovery_text: str,
+    cycle: HypothesisCycle,
+    attempt: int,
+    max_attempts: int,
+) -> str:
+    parts = [
+        "TASK DESCRIPTION:",
+        task_description,
+        "",
+        "ENVIRONMENT DISCOVERY:",
+        discovery_text[:2000],
+        "",
+        f"ATTEMPT {attempt + 1}/{max_attempts}",
+        "Previous results:",
+    ]
+    for test in cycle.tests:
+        parts.append(
+            f"  Command: {test['action']}\n"
+            f"  Exit: {test['result'].get('exit_code')}\n"
+            f"  Output: {test['result'].get('stdout', '')[:300]}\n"
+            f"  Error: {test['result'].get('stderr', '')[:200]}"
+        )
+    parts.append("")
+    parts.append(
+        "Output only the next shell command to run - one line, no explanation. "
+        "Read only what is inside this sandbox."
+    )
+    return "\n".join(parts)
+
+
+def _evaluate_prompt(task_description: str, cmd: str, result: Dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "TASK DESCRIPTION:",
+            task_description,
+            "",
+            f"COMMAND EXECUTED: {cmd}",
+            f"EXIT CODE: {result['exit_code']}",
+            f"STDOUT: {result['stdout'][:800]}",
+            f"STDERR: {result['stderr'][:500]}",
+            "",
+            "Respond with EXACTLY one line:",
+            '  ANSWER: {"<key>": "<the value you found>"}   if the output contains '
+            "the answer",
+            "  COMMAND: <shell command>                     if you need another "
+            "command",
+            "",
+            "Never guess. If the output does not contain the answer, ask for the "
+            "next command.",
+        ]
+    )
+
+
+def _parse_answer(decision: str) -> Optional[str]:
+    """The model's committed answer, or None. Only an ANSWER: line counts - and
+    only if it parses as a JSON object, so a prose answer never becomes a
+    fabricated JSON one."""
+    text = decision.replace("```", "").strip()
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("ANSWER:"):
+            payload = line[len("ANSWER:") :].strip()
+            try:
+                parsed = json.loads(payload)
+            except json.JSONDecodeError:
+                return None
+            if isinstance(parsed, dict):
+                return json.dumps(parsed, sort_keys=True)
+            return None
+    return None
 
 
 def run_hypothesis_task(
@@ -231,342 +388,83 @@ def run_hypothesis_task(
     engine: HypothesisEngine,
     max_attempts: int = 5,
     discovery_text: str = "",
+    client: Optional[ModelClient] = None,
+    sandbox: Optional[Path] = None,
 ) -> Optional[str]:
+    """Run one task: propose -> execute -> evaluate, until an ANSWER or exhaustion.
+
+    Returns the model's committed answer, or None. None means unresolved, and
+    the caller records an empty answer - never a synthesis.
     """
-    Run one task using hypothesis-driven discovery with model-driven commands.
+    client = client or relay_client()
+    owns_sandbox = sandbox is None
+    sandbox = sandbox or build_sandbox()
 
-    AF2 pattern:
-    1. Model reads discovery.md + task description
-    2. Model proposes a shell command to test hypothesis
-    3. Command executes; result fed back to model
-    4. Model evaluates result, decides next command or ANSWER
-    5. Repeats until resolved or max_attempts
-
-    Returns the final answer string, or None if unresolved.
-    """
-    context = (
-        "TASK DESCRIPTION:\n"
-        f"{task_description}\n\n"
-        "ENVIRONMENT DISCOVERY:\n"
-        f"{discovery_text[:2000]}\n\n"
-        "You are solving a task in an unknown environment. The task requires you to:\n"
-        "1. Find the relevant file(s) in world_files/ directory\n"
-        "2. Read and parse them\n"
-        "3. Output the answer as JSON to stdout\n\n"
-        "MANDATORY COMMANDS FOR EACH TASK TYPE (copy exactly, do not modify):\n"
-        "config-parsing: awk -F' = ' '/ = / {gsub(/ /, \"\", $2); printf \"{\\042value\\042:\\042%s\\042}\\n\", $2}' world_files/*.conf | head -1\n"
-        'log-pattern-detection: grep -c \'specific_pattern\' world_files/*.log | awk -F: \'{sum+=$2} END {print "{\\"count\\": " sum "}"}\'\n'
-        'file-hash-verification: sha256sum world_files/*.bin | head -1 | awk \'{print "{\\"hash\\": \\"" $1 "}"}\'\n'
-        "command-output-transformation: echo 'data' | tr 'a-z' 'A-Z' | awk '{print \"{\\\"transformed\\\":\\\"\" $0 \"}\"}'\n"
-        r"environment-variable-resolution: echo \$HIDDEN_VAR | rev | awk '{print \"{\\\"result\\\":\\\"\" $0 \"}\"}'\n\n"
-        "Available tools: cat, find, grep, awk, sha256sum, ls, echo, tr, rev, cut. NO jq.\n\n"
-        "STRICT RULES - VIOLATION MEANS FAILURE:\n"
-        "1. Use ONLY the commands above. Do not modify them.\n"
-        "2. Do not add jq, jq is not available.\n"
-        "3. Do not add extra pipes or commands.\n"
-        "4. Output ONLY the command or ANSWER, nothing else.\n\n"
-        "You discover by running shell commands. Output only the next command to run, nothing else.\n"
-        "No markdown, no explanation, just the command."
-    )
-
-    engine.start_cycle(
-        hypothesis="Initial: model will probe environment to discover task requirements.",
+    cycle = engine.start_cycle(
+        hypothesis="Initial: probe the environment to discover task requirements.",
         task_id=task_id,
     )
 
-    answer = None
-
-    for attempt in range(max_attempts):
-        print(f"  [DEBUG] attempt {attempt+1}/{max_attempts}", flush=True)
-
-        # Model proposes next command
-        model_prompt = f"""{context}
-
-ATTEMPT {attempt + 1}/{max_attempts}
-
-Previous results:
-"""
-        if engine._current and engine._current.tests:
-            for t in engine._current.tests:
-                model_prompt += f"  Command: {t['action']}\n  Exit: {t['result'].get('exit_code')}\n  Output: {t['result'].get('stdout', '')[:300]}\n  Error: {t['result'].get('stderr', '')[:200]}\n\n"
-
-        model_prompt += "What is the next command to run? Output only the command:"
-
-        cmd = call_model(model_prompt, max_tokens=200)
-        print(f"  [DEBUG] raw cmd: {cmd[:200]}", flush=True)
-        if cmd.startswith("ERROR:"):
-            engine.correct(f"Model call failed: {cmd}")
-            continue
-
-        # Extract the first shell command from the model's output
-        # The model may output reasoning text before/after the command
-        cmd = cmd.replace("```", "").replace("`", "").strip()
-
-        # Try to extract a shell command from the output
-        import re
-
-        lines = cmd.split("\n")
-        cmd = None
-        for line in lines:
-            line = line.strip()
-            if line and not line.lower().startswith(
-                (
-                    "okay",
-                    "the user",
-                    "let me",
-                    "let's",
-                    "i need",
-                    "i will",
-                    "first",
-                    "then",
-                    "next",
-                    "now",
-                    "this",
-                    "we",
-                    "to ",
+    try:
+        for attempt in range(max_attempts):
+            try:
+                reply = call_model(
+                    _propose_prompt(
+                        task_description, discovery_text, cycle, attempt, max_attempts
+                    ),
+                    client,
                 )
-            ):
-                if re.match(
-                    r"^(ls|find|cat|grep|head|tail|cd|pwd|echo|python3|bash|sh|awk|sed|cut|sort|uniq|wc)\b",
-                    line,
-                ):
-                    cmd = line
-                    break
-                elif line.startswith(
-                    (
-                        "./",
-                        "/",
-                        "~/",
-                        "ls ",
-                        "find ",
-                        "cat ",
-                        "grep ",
-                        "head ",
-                        "tail ",
-                        "python3 ",
-                        "bash ",
-                        "sh ",
-                    )
-                ):
-                    cmd = line
-                    break
-        if not cmd:
-            cmd = "ls -la ."
-
-        # Execute the proposed command
-        result = execute_command(cmd, cwd=WORLD_DIR)
-        print(
-            f"  [DEBUG] result: exit={result['exit_code']}, out={result['stdout'][:200]}",
-            flush=True,
-        )
-        # Execute the proposed command
-        result = execute_command(cmd, cwd=WORLD_DIR)
-        print(
-            f"  [DEBUG] result: exit={result['exit_code']}, out={result['stdout'][:200]}",
-            flush=True,
-        )
-        matches = result["ok"] and bool(result["stdout"].strip())
-        engine.test(action=cmd, result=result, matches_expectation=matches)
-
-        # AUTO-DETECT: If STDOUT contains valid JSON with "value" key, use it as answer
-        import json as _json
-
-        stdout = result["stdout"].strip()
-        if stdout:
-            try:
-                parsed = _json.loads(stdout)
-                if isinstance(parsed, dict) and "value" in parsed:
-                    answer = _json.dumps(parsed, sort_keys=True)
-                    print(
-                        f"  [DEBUG] Auto-detected answer from STDOUT: {answer}",
-                        flush=True,
-                    )
-                    engine.resolve(final_answer=answer)
-                    return answer
-            except Exception:
-                pass
-
-        # Model evaluates the result
-        eval_prompt = (
-            f"{context}\n\n"
-            f"COMMAND EXECUTED: {cmd}\n"
-            f"EXIT CODE: {result['exit_code']}\n"
-            f"STDOUT: {result['stdout'][:800]}\n"
-            f"STDERR: {result['stderr'][:500]}\n\n"
-            "Based on this result, respond with EXACTLY ONE of these formats:\n"
-            '1. ANSWER: {"value": "the_value_you_found_in_the_output"}  (if the command output CONTAINS the answer)\n'
-            "2. COMMAND: <shell command>  (if you need to run another command to find the answer)\n\n"
-            'IMPORTANT: If the command output already contains a JSON value like {{"value":"..."}}, THAT IS YOUR ANSWER. Output: ANSWER: <that JSON>\n\n'
-            "Output ONLY one line - either ANSWER: {...} or COMMAND: <command>."
-        )
-
-        decision = call_model(eval_prompt, max_tokens=500)
-        print(f"  [DEBUG] eval_prompt STDOUT: {result['stdout'][:200]}", flush=True)
-        print(f"  [DEBUG] decision: {decision[:200]}", flush=True)
-
-        if decision.startswith("ERROR:"):
-            engine.correct(f"Model evaluation failed: {decision}")
-            continue
-
-        decision = decision.replace("```", "").replace("`", "").strip()
-
-        # Handle multiple answer formats from model
-        if decision.startswith("ANSWER:"):
-            answer = decision[len("ANSWER:") :].strip()
-            print(f"  [DEBUG] Found ANSWER prefix, answer: {answer[:100]}", flush=True)
-            engine.resolve(final_answer=answer)
-            return answer
-        else:
-            # Try to parse as JSON - if valid JSON, use it as answer
-            try:
-                import json as _json
-
-                parsed = _json.loads(decision)
-                answer = _json.dumps(parsed, sort_keys=True)
-                print(f"  [DEBUG] Parsed JSON answer: {answer[:100]}", flush=True)
-                engine.resolve(final_answer=answer)
-                return answer
-            except Exception as e:
-                print(f"  [DEBUG] JSON parse failed: {e}", flush=True)
-                pass
-        # Extract COMMAND: from explanation text
-        next_cmd = None
-        if "COMMAND:" in decision:
-            import re
-
-            match = re.search(r"COMMAND:\s*([^\n]+)", decision)
-            if match:
-                next_cmd = match.group(1).strip()
-                print(f"  [DEBUG] Extracted COMMAND: {next_cmd}", flush=True)
-        else:
-            # Try to extract a shell command from the decision text
-            import re
-
-            lines = decision.split("\n")
-            for line in lines:
-                line = line.strip()
-                if line and re.match(
-                    r"^(ls|find|cat|grep|head|tail|cd|pwd|echo|python3|bash|sh|awk|sed|cut|sort|uniq|wc)\b",
-                    line,
-                ):
-                    next_cmd = line
-                    print(
-                        f"  [DEBUG] Extracted command from text: {next_cmd}", flush=True
-                    )
-                    break
-            else:
-                print(f"  [DEBUG] Unclear decision: {decision[:200]}", flush=True)
-                engine.correct(f"Unclear model decision: {decision[:100]}")
+            except ModelError as exc:
+                cycle.add_correction(f"model call failed: {exc}")
                 continue
 
-        # Execute the extracted command
-        if next_cmd:
-            print(f"  [DEBUG] Executing command: {next_cmd}", flush=True)
-            cmd = next_cmd
-            result = execute_command(cmd, cwd=WORLD_DIR)
-            print(
-                f"  [DEBUG] result: exit={result['exit_code']}, out={result['stdout'][:200]}",
-                flush=True,
-            )
-            matches = result["ok"] and bool(result["stdout"].strip())
-            engine.test(action=cmd, result=result, matches_expectation=matches)
-
-            # AUTO-DETECT: If STDOUT contains valid JSON with "value" key, use it as answer
-            import json as _json
-
-            stdout = result["stdout"].strip()
-            if stdout:
-                try:
-                    parsed = _json.loads(stdout)
-                    if isinstance(parsed, dict) and "value" in parsed:
-                        answer = _json.dumps(parsed, sort_keys=True)
-                        print(
-                            f"  [DEBUG] Auto-detected answer from STDOUT: {answer}",
-                            flush=True,
-                        )
-                        engine.resolve(final_answer=answer)
-                        return answer
-                except Exception:
-                    pass
-
-            # Model evaluates the result
-            eval_prompt = (
-                f"{context}\n\n"
-                f"COMMAND EXECUTED: {cmd}\n"
-                f"EXIT CODE: {result['exit_code']}\n"
-                f"STDOUT: {result['stdout'][:800]}\n"
-                f"STDERR: {result['stderr'][:500]}\n\n"
-                "Based on this result, respond with EXACTLY ONE of these formats:\n"
-                '1. ANSWER: {"value": "the_value_you_found_in_the_output"}  (if the command output CONTAINS the answer)\n'
-                "2. COMMAND: <shell command>  (if you need to run another command to find the answer)\n\n"
-                'IMPORTANT: If the command output already contains a JSON value like {{"value":"..."}}, THAT IS YOUR ANSWER. Output: ANSWER: <that JSON>\n\n'
-                "Output ONLY one line - either ANSWER: {...} or COMMAND: <command>."
-            )
-
-            decision = call_model(eval_prompt, max_tokens=500)
-            print(f"  [DEBUG] decision: {decision[:200]}", flush=True)
-
-            if decision.startswith("ERROR:"):
-                engine.correct(f"Model evaluation failed: {decision}")
+            cmd = extract_command(reply)
+            if cmd is None:
+                cycle.add_correction(f"no whitelisted command in reply: {reply[:120]}")
                 continue
 
-            decision = decision.replace("```", "").replace("`", "").strip()
+            result = execute_command(cmd, cwd=sandbox)
+            cycle.add_test(cmd, result, result["ok"] and bool(result["stdout"].strip()))
 
-            # Handle multiple answer formats from model
-            if decision.startswith("ANSWER:"):
-                answer = decision[len("ANSWER:") :].strip()
-                print(
-                    f"  [DEBUG] Found ANSWER prefix, answer: {answer[:100]}", flush=True
+            try:
+                decision = call_model(
+                    _evaluate_prompt(task_description, cmd, result),
+                    client,
+                    max_tokens=2000,
                 )
-                engine.resolve(final_answer=answer)
-                return answer
-            else:
-                # Try to parse as JSON - if valid JSON, use it as answer
-                try:
-                    import json as _json
+            except ModelError as exc:
+                cycle.add_correction(f"model evaluation failed: {exc}")
+                continue
 
-                    parsed = _json.loads(decision)
-                    answer = _json.dumps(parsed, sort_keys=True)
-                    print(f"  [DEBUG] Parsed JSON answer: {answer[:100]}", flush=True)
-                    engine.resolve(final_answer=answer)
-                    return answer
-                except Exception as e:
-                    print(f"  [DEBUG] JSON parse failed: {e}", flush=True)
-                    pass
-            # Extract COMMAND: from explanation text
+            answer = _parse_answer(decision)
+            if answer is not None:
+                cycle.resolved = True
+                cycle.final_answer = answer
+                return answer
+
             if "COMMAND:" in decision:
-                import re
-
-                match = re.search(r"COMMAND:\s*([^\n]+)", decision)
-                if match:
-                    next_cmd = match.group(1).strip()
-                    context += f"\nPrevious command '{next_cmd}' was suggested but not yet executed."
+                next_cmd = decision.split("COMMAND:", 1)[1].strip().splitlines()[0]
+                cycle.add_correction(f"model requested another command: {next_cmd}")
             else:
-                # Try to extract a shell command from the decision text
-                import re
+                cycle.add_correction(f"unclear decision: {decision[:120]}")
+    finally:
+        if owns_sandbox:
+            cleanup_sandbox(sandbox)
 
-                lines = decision.split("\n")
-                for line in lines:
-                    line = line.strip()
-                    if line and re.match(
-                        r"^(ls|find|cat|grep|head|tail|cd|pwd|echo|python3|bash|sh|awk|sed|cut|sort|uniq|wc)\b",
-                        line,
-                    ):
-                        next_cmd = line
-                        context += f"\nPrevious command '{next_cmd}' was suggested but not yet executed."
-                        break
-                else:
-                    print(f"  [DEBUG] Unclear decision: {decision[:200]}", flush=True)
-                    engine.correct(f"Unclear model decision: {decision[:100]}")
-
-    engine.resolve(final_answer=answer)
-    return answer
+    cycle.resolved = False
+    return None
 
 
 if __name__ == "__main__":
     engine = HypothesisEngine()
-    answer = run_hypothesis_task("unknown task", "test-task-1", engine)
+    answer = run_hypothesis_task(
+        "There is a configuration file somewhere in the world_files directory. "
+        "Read it, parse the value associated with a specific key, and output "
+        'that value as JSON: {"value": "<the value>"}.',
+        "smoke-task",
+        engine,
+    )
     path = engine.write_log()
     print(f"Answer: {answer}")
     print(f"Log written to {path}")
-    print(f"Recovery rate: {engine.recovery_rate():.0%}")
+    print(f"Recovery rate (legacy): {engine.recovery_rate():.0%}")

@@ -31,7 +31,14 @@ sys.path.insert(0, str(VERDICT_BENCH_DIR / "world"))
 sys.path.insert(0, str(VERDICT_BENCH_DIR))
 
 from discovery import run_discovery  # noqa: E402
-from hypothesis import HypothesisEngine, run_hypothesis_task  # noqa: E402
+from hypothesis import (  # noqa: E402
+    HypothesisEngine,
+    build_sandbox,
+    cleanup_sandbox,
+    local_client,
+    relay_client,
+    run_hypothesis_task,
+)
 from verify import verify_deliverable, write_verification_report  # noqa: E402
 from grader import grade_task_output  # noqa: E402
 from world.gates import check_world, report as gate_report  # noqa: E402
@@ -67,6 +74,7 @@ def run_arm(
     output_dir: Path,
     split: Dict[str, Any] | None = None,
     only_split: str | None = None,
+    client: Any = None,
 ) -> Dict[str, Any]:
     """Run one arm over its split share of the tasks, graded against withheld gold.
 
@@ -90,9 +98,14 @@ def run_arm(
     discovery_path = output_dir / "discovery.md"
     hypothesis_log_path = output_dir / "hypothesis_log.md"
 
+    # The arm reads a SANDBOX: world_files and the manifest copied out of the
+    # world dir. Discovery and every command run inside it - the withheld
+    # private root stays outside the tree the arm can touch (D.1).
+    sandbox = build_sandbox(world_dir)
+
     # Phase 1: Discovery (once per world, cached) - identical for every arm.
     print(f"[{arm_name}] Phase 1: Environment discovery...")
-    discovery_path = run_discovery(world_dir)
+    discovery_path = run_discovery(sandbox)
     discovery_text = discovery_path.read_text() if discovery_path.exists() else ""
     print(f"[{arm_name}] Discovery written to {discovery_path}")
 
@@ -119,6 +132,8 @@ def run_arm(
             engine=engine,
             max_attempts=5,
             discovery_text=discovery_text,
+            client=client,
+            sandbox=sandbox,
         )
         elapsed = time.perf_counter() - start
 
@@ -168,6 +183,7 @@ def run_arm(
 
     # Write hypothesis log
     engine.write_log()
+    cleanup_sandbox(sandbox)
 
     # One row per task, appended - the same shape for every arm, so stats.py
     # reads runs from any arm without conversion.
@@ -257,6 +273,11 @@ def main() -> None:
         help="Run only this split member's tasks",
     )
     parser.add_argument(
+        "--local",
+        action="store_true",
+        help="debug route: local Ollama instead of the graded relay model",
+    )
+    parser.add_argument(
         "--build-world", action="store_true", help="Build the world before running"
     )
     parser.add_argument("--seed", type=int, default=20261120, help="World seed")
@@ -293,15 +314,26 @@ def main() -> None:
         sys.exit(1)
 
     # Run each arm - same split, same world, same prompt path (parity is
-    # structural); the only difference between arms is the arm itself.
+    # structural); the only difference between arms is the arm itself. ONE
+    # client for every arm: the graded relay route unless --local is debugging.
     split = _load_split(Path(args.spec_split))
+    client = local_client() if args.local else relay_client()
+    print(
+        f"Model route: {client.model} via {client.base_url}"
+        f"{' (LOCAL DEBUG)' if args.local else ''}"
+    )
     all_results: List[Dict[str, Any]] = []
     for arm in args.arms:
         print(f"\n{'='*60}")
         print(f"Running arm: {arm}")
         print(f"{'='*60}")
         result = run_arm(
-            world_path, arm, output_dir, split=split, only_split=args.only_split
+            world_path,
+            arm,
+            output_dir,
+            split=split,
+            only_split=args.only_split,
+            client=client,
         )
         all_results.append(result)
 

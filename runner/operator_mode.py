@@ -269,6 +269,12 @@ def _run_once(
     manifest["tasks"] = [task_for_arm(t) for t in manifest["tasks"]]
     gold = json.loads(Path(gold_path).read_text())
     answers = gold.get("answers", gold)
+    # The manifest is public and carries no taxonomy (A.1). The RUNNER may know
+    # the family - it is withheld from the agent, not from the harness - and it
+    # needs it for the report's per-family attribution.
+    from world.build_world import generate_tasks
+
+    families = {t["task_id"]: t["family"] for t in generate_tasks()}
     budget = bench.Budget(**spec["budget"])
 
     enforce_world_gates(Path(manifest_path).resolve().parent, sandbox, Path(gold_path))
@@ -320,7 +326,7 @@ def _run_once(
                     "task_id": attempt.task_id,
                     "stopped_reason": getattr(attempt, "stopped_reason", ""),
                     "gate_blocks": getattr(attempt, "gate_blocks", []),
-                    "family": getattr(attempt, "family", "unknown"),
+                    "family": families.get(attempt.task_id, "unknown"),
                     "rep": 1,
                     "task_pass": grade.passed,
                     "criteria_passed": 1 if grade.passed else 0,

@@ -77,32 +77,38 @@ def build_report(
     summaries = [summarise_arm(arm, by_arm[arm]) for arm in sorted(by_arm)]
 
     comparison: Dict[str, Any] = {}
-    if len(by_arm) == 2:
-        names = sorted(by_arm)
+    if len(by_arm) >= 2:
         # Pair on the tasks BOTH arms completed live: voiding removes different
         # tasks per arm (A: 22 live, B: 13 on the World-1 evidence), and an
         # unpaired McNemar is not a comparison. The pairing is disclosed.
-        a_map = index_by_task(by_arm[names[0]])
-        b_map = index_by_task(by_arm[names[1]])
-        shared = sorted(set(a_map) & set(b_map))
-        a_live = [a_map[task_id] for task_id in shared]
-        b_live = [b_map[task_id] for task_id in shared]
-        result = mcnemar(a_live, b_live)
-        comparison = {
-            "arms": names,
-            "paired_tasks": len(shared),
-            "discordant": result.discordant,
-            "p_value": result.p_value,
-            "tasks": [
-                {
-                    "task_id": d.task_id,
-                    "family": d.family,
-                    "winner": d.winner,
-                    "loser_scored_zero": d.loser_scored_zero,
-                }
-                for d in discordant_tasks(a_live, b_live)
-            ],
-        }
+        names = sorted(by_arm)
+        pairs = []
+        for i, first in enumerate(names):
+            for second in names[i + 1 :]:
+                a_map = index_by_task(by_arm[first])
+                b_map = index_by_task(by_arm[second])
+                shared = sorted(set(a_map) & set(b_map))
+                a_live = [a_map[task_id] for task_id in shared]
+                b_live = [b_map[task_id] for task_id in shared]
+                result = mcnemar(a_live, b_live)
+                pairs.append(
+                    {
+                        "arms": [first, second],
+                        "paired_tasks": len(shared),
+                        "discordant": result.discordant,
+                        "p_value": result.p_value,
+                        "tasks": [
+                            {
+                                "task_id": d.task_id,
+                                "family": d.family,
+                                "winner": d.winner,
+                                "loser_scored_zero": d.loser_scored_zero,
+                            }
+                            for d in discordant_tasks(a_live, b_live)
+                        ],
+                    }
+                )
+        comparison = {"arms": names, "pairs": pairs}
 
     injected = [r for r in rows if r.get("adversary")]
     recovery = {
@@ -200,17 +206,20 @@ def render(data: Dict[str, Any]) -> str:
     if data["comparison"]:
         comparison = data["comparison"]
         lines.append(
-            f"## Comparison ({' vs '.join(comparison['arms'])}) - exact McNemar"
+            f"## Comparison ({' vs '.join(comparison['arms'])}) - exact McNemar, "
+            "paired on the tasks both arms completed live"
         )
-        lines.append(
-            f"  {comparison['discordant']} discordant, p = "
-            f"{comparison['p_value']:.4f}"
-        )
-        for task in comparison["tasks"]:
+        for pair in comparison["pairs"]:
             lines.append(
-                f"  - {task['task_id']} ({task['family']}): {task['winner']} won, "
-                f"loser scored zero: {task['loser_scored_zero']}"
+                f"  {' vs '.join(pair['arms'])}: {pair['discordant']} discordant "
+                f"of {pair['paired_tasks']} paired, p = {pair['p_value']:.4f}"
             )
+            for task in pair["tasks"]:
+                lines.append(
+                    f"    - {task['task_id']} ({task['family']}): "
+                    f"{task['winner']} won, loser scored zero: "
+                    f"{task['loser_scored_zero']}"
+                )
         lines.append("")
 
     recovery = data["recovery"]

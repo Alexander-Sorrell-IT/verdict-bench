@@ -61,9 +61,35 @@ def test_the_comparison_pairs_on_the_tasks_both_arms_completed():
     for attempt in attempts:
         by_arm.setdefault(attempt.arm, []).append(attempt)
     shared = set(index_by_task(by_arm["A"])) & set(index_by_task(by_arm["B"]))
-    assert data["comparison"]["paired_tasks"] == len(shared)
-    assert data["comparison"]["discordant"] == 3
-    assert data["comparison"]["p_value"] == 0.25
+    assert len(data["comparison"]["pairs"]) == 1
+    pair = data["comparison"]["pairs"][0]
+    assert pair["paired_tasks"] == len(shared)
+    assert pair["discordant"] == 3
+    assert pair["p_value"] == 0.25
+
+
+def test_three_arms_get_all_pairwise_comparisons(tmp_path):
+    """The comparison claim needs every pair, not just the first two arms."""
+    rows = tmp_path / "three.jsonl"
+    lines = []
+    for arm in ("A", "B", "C"):
+        for index, task_id in enumerate(("T1", "T2", "T3")):
+            lines.append(
+                json.dumps(
+                    {
+                        "arm": arm,
+                        "task_id": task_id,
+                        "task_pass": (index + len(arm)) % 2 == 0,
+                        "criteria_passed": 1,
+                        "criteria_total": 1,
+                    }
+                )
+            )
+    rows.write_text("\n".join(lines) + "\n")
+    data = build_report(rows, GOLD_PATH)
+    pairs = data["comparison"]["pairs"]
+    assert [p["arms"] for p in pairs] == [["A", "B"], ["A", "C"], ["B", "C"]]
+    assert all(p["paired_tasks"] == 3 for p in pairs)
 
 
 def test_af2_recorded_25_25_and_survives_as_8_of_8():

@@ -24,7 +24,6 @@ from world.paths import (  # noqa: E402
     FREEZE_PATH,
     GOLD_PATH,
     MANIFEST_PATH,
-    WORLD_DIR,
 )
 
 FROZEN_RECORD = BENCH_DIR / "spec" / "frozen_run.json"
@@ -46,11 +45,14 @@ def _hash_tree(root: Path) -> str:
 
 
 def compute_freeze(split_path: Optional[Path] = None) -> Dict[str, Any]:
-    """The freeze record: what the run is allowed to be."""
+    """The freeze record: what the run is allowed to be.
+
+    Hashes only, never a path: an absolute path in the record would refuse
+    every relocated checkout, and portability is a rule this repo lives by.
+    """
     world_files = _hash_tree(FILES_DIR)
     record: Dict[str, Any] = {
         "rule_version": RULE_VERSION,
-        "world_id_dir": str(WORLD_DIR),
         "manifest_sha256": _hash_file(MANIFEST_PATH),
         "gold_sha256": _hash_file(GOLD_PATH),
         "world_files_sha256": world_files,

@@ -176,6 +176,8 @@ def run_arm(
                 "task_id": task_id,
                 "family": family,
                 "rep": 1,
+                "model": getattr(client, "model", None),
+                "base_url": getattr(client, "base_url", None),
                 "task_pass": grade["passed"],
                 "criteria_passed": 1 if grade["passed"] else 0,
                 "criteria_total": 1,

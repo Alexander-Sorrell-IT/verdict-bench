@@ -47,6 +47,7 @@ from receipts import (  # noqa: E402
 )
 from stats import (  # noqa: E402
     StatsError,
+    index_by_task,
     load_attempts,
     mcnemar,
     summarise_arm,
@@ -147,9 +148,18 @@ def grade_run(
     comparison: Dict[str, Any] = {}
     if len(by_arm) == 2:
         names = sorted(by_arm)
-        result = mcnemar(by_arm[names[0]], by_arm[names[1]])
+        # Pair on the tasks both arms attempted - after voids the arms' live
+        # task sets differ (World 1: A 22, B 13), and an unpaired McNemar is
+        # not a comparison. The pairing count is disclosed.
+        a_map = index_by_task(by_arm[names[0]])
+        b_map = index_by_task(by_arm[names[1]])
+        shared = sorted(set(a_map) & set(b_map))
+        a_live = [a_map[task_id] for task_id in shared]
+        b_live = [b_map[task_id] for task_id in shared]
+        result = mcnemar(a_live, b_live)
         comparison = {
             "arms": names,
+            "paired_tasks": len(shared),
             "a_only": result.a_only,
             "b_only": result.b_only,
             "both_pass": result.both_pass,

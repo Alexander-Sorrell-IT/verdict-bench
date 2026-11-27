@@ -33,6 +33,28 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 REQUIRED_FIELDS = ("arm", "task_id", "task_pass", "criteria_passed", "criteria_total")
 
+# The void-and-rerun policy, in code. An attempt killed by the wall clock was
+# not graded on its merits: the recorded World-1 attempts carry rc=124 (the
+# `timeout` command's exit code) on rows that were nevertheless recorded as
+# passes - 17 of AF2's 25, 4 of B's 17, 2 of A's 18. Those rows are voided
+# before any comparison is quoted, and the void count is published beside it.
+VOIDABLE_RC = (124,)
+VOID_REASONS: Dict[int, str] = {
+    124: "timeout: killed by the wall clock - the attempt was not graded on its merits",
+}
+
+
+def is_void(record: Dict[str, Any]) -> bool:
+    """One predicate, one policy: a record whose rc says it never completed."""
+    return record.get("rc") in VOIDABLE_RC
+
+
+def void_reason(record: Dict[str, Any]) -> str:
+    rc = record.get("rc")
+    if isinstance(rc, int) and rc in VOID_REASONS:
+        return VOID_REASONS[rc]
+    return f"voided: rc={rc}"
+
 
 class StatsError(RuntimeError):
     """Raised when the attempt records cannot support the statistic being asked for."""
@@ -53,8 +75,13 @@ class Attempt:
     criteria_total: int
 
 
-def load_attempts(path: Path) -> List[Attempt]:
-    """Read one JSONL results file. Rejects malformed records loudly."""
+def load_attempts(path: Path, void_timeouts: bool = True) -> List[Attempt]:
+    """Read one JSONL results file. Rejects malformed records loudly.
+
+    Voided attempts (rc=124) are EXCLUDED by default and reported separately by
+    load_voids - quoting a comparison that counts a killed attempt's pass is
+    the World-1 headline's defect, and the policy is code, not a footnote.
+    """
     attempts: List[Attempt] = []
     for line_no, line in enumerate(path.read_text().splitlines(), start=1):
         if not line.strip():
@@ -66,6 +93,8 @@ def load_attempts(path: Path) -> List[Attempt]:
         missing = [f for f in REQUIRED_FIELDS if f not in record]
         if missing:
             raise StatsError(f"{path}:{line_no}: missing field(s) {', '.join(missing)}")
+        if void_timeouts and is_void(record):
+            continue
         attempts.append(
             Attempt(
                 arm=record["arm"],
@@ -79,6 +108,27 @@ def load_attempts(path: Path) -> List[Attempt]:
     if not attempts:
         raise StatsError(f"{path}: contains no attempt records")
     return attempts
+
+
+def load_voids(path: Path) -> List[Dict[str, Any]]:
+    """The voided records, with the reason each was voided."""
+    voids: List[Dict[str, Any]] = []
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if is_void(record):
+            voids.append(
+                {
+                    "arm": record.get("arm"),
+                    "task_id": record.get("task_id"),
+                    "rc": record.get("rc"),
+                    "task_pass": record.get("task_pass"),
+                    "wall_s": record.get("wall_s"),
+                    "reason": void_reason(record),
+                }
+            )
+    return voids
 
 
 def index_by_task(attempts: Iterable[Attempt]) -> Dict[str, Attempt]:

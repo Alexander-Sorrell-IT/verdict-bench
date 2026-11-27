@@ -17,9 +17,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "runner"))
-sys.path.insert(0, str(REPO_ROOT / "score"))
 
-from independent_grader import EMPTY_RATE_CEILING, grade_run  # noqa: E402
+# Package-qualified: a bare self-import of score/ modules resolves twice under
+# mypy (the duplicate-module error setup.cfg warns about).
+from score.independent_grader import EMPTY_RATE_CEILING, grade_run  # noqa: E402
 from world.paths import GOLD_PATH  # noqa: E402
 
 

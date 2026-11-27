@@ -131,12 +131,17 @@ green). What remains:
 Decision 2 RESOLVED 2026-11-27 (operator: "it all should be proven"): E runs.
 
 ```
-E.2  World-2 run, both arms, nemotron relay   <-- EXECUTING NOW
-E.3  Harness² comparison
+E.2  World-2 run, both arms, nemotron relay   <-- EXECUTING (arm C staged: bdb1138)
+E.3  Harness² comparison (arm C built + tested offline)
 E.5  void-and-rerun policy executed
 F    regenerate the report from the receipts (minutes)
-G    operator mode — done (fb9c3b4)
+G    operator mode — done
 ```
+
+Run log: the first E.2 attempt was killed by a 600s timeout mid-arm-2 (arm 1's
+25 grades survived in the receipt chain). Fixed properly rather than
+re-kicked: rows now write per task, so a killed run leaves its evidence like
+the chain already did. Relaunched with a 90-minute window.
 
 Everything E needs is staged and tested: the world is frozen and refuses change,
 both runners refuse a blocked world, the arms share one relay client, the rows

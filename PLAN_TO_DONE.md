@@ -41,7 +41,7 @@ absolute-path dependency.
 
 ---
 
-## Phase B — split, relay, parity closure (3 h; one external fetch)
+## Phase B — DONE (c768417 → 5a5bb06; CHECKPOINT B passed)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -56,7 +56,7 @@ absolute-path dependency.
 committed.** Analogous unknown: the apex fetch may be unreachable; the relay
 absorb may not match `spec/providers.json`'s shape.
 
-## Phase C — the sealed grader (2 h)
+## Phase C — DONE (e30ce45; CHECKPOINT C passed - scripted verdict trials)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -67,7 +67,7 @@ absorb may not match `spec/providers.json`'s shape.
 **CHECKPOINT C — the verdict machinery is proven on scripted trials, before any
 real result exists to bias the rules.**
 
-## Phase D — the adversary and measured recovery (2 h 30 m; highest risk)
+## Phase D — DONE (4253081 → b1ce999; recovery is measured on the relay, definition pre-registered)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -81,7 +81,7 @@ real result exists to bias the rules.**
 Analogous unknown: **none of this machinery has ever executed**, and D.4 defines
 a metric whose semantics are fixed now, before results exist.
 
-## Phase F — the report generator, built BEFORE the runs (1 h 30 m)
+## Phase F — DONE (a7cfafe; report generates byte-identical from the artifacts)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -92,7 +92,7 @@ a metric whose semantics are fixed now, before results exist.
 Build it now; regenerate after E. The run window is API time — none of it should
 be spent debugging the report script.
 
-## E prep (1 h) — done before the sitting, so the sitting only runs
+## E prep — DONE (f449666; freeze enforced, World-1 re-verification committed)
 
 | # | Step | Verify | Est |
 |---|---|---|---|
@@ -122,14 +122,26 @@ a full world end-to-end, and the relay has been live-verified once, on one task.
 
 ---
 
-## Sequencing in one line
+## Sequencing — where it stands
 
-**B.1–B.6 → [CHECKPOINT B] → C.1–C.3 → [CHECKPOINT C] → D.1–D.6 → F.1–F.3 →
-E.1/E.4 prep → [DECISION 2] → E.2–E.5 (one sitting) → F regenerate → G.1–G.3.**
+**A.1–A.6 → B.1–B.6 → C.1–C.3 → D.1–D.6 → F → E-prep: ALL DONE** (2026-11-26/27,
+40 commits from the plan's start, 190 tests, mypy clean on 50 files, clean-room
+green). What remains:
 
-**Totals:** ~11 h 45 m of construction at plan rate, ~18 h at Phase A's observed
-defect rate, then one 4–7 h API sitting. The report regenerates in minutes
-afterwards.
+```
+[YOUR DECISION: the run window]
+E.2  World-2 run, both arms, nemotron relay (2–4 h API)
+E.3  Harness² comparison (1–2 h API)
+E.5  void-and-rerun policy executed
+F    regenerate the report from the receipts (minutes)
+G.1–G.3 operator mode (~2 h)
+```
+
+Everything E needs is staged and tested: the world is frozen and refuses change,
+both runners refuse a blocked world, the arms share one relay client, the rows
+carry the model route and the answers, the sealed grader re-grades from gold,
+the report generates itself, and the recovery measurement is pre-registered.
+The only thing between here and the runs is your decision on the window.
 
 ## What needs you vs what I execute
 

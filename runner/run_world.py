@@ -154,6 +154,8 @@ def run_arm(
                 "criteria_total": 1,
                 "valid_json": valid_json,
                 "wall_s": round(elapsed, 2),
+                "answer": answer or "",
+                "answer_empty": not bool(answer and answer.strip()),
                 "split": split_member,
                 "self_verify": vreport.get("overall", "fail"),
                 "reason": grade.get("reason", ""),

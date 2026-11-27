@@ -30,6 +30,8 @@
 from __future__ import annotations
 
 import json
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -69,9 +71,21 @@ COMMAND_WHITELIST = (
     "tr",
     "rev",
     "sha256sum",
+    "md5sum",
     "echo",
     "cd",
     "pwd",
+    "sh",
+    "bash",
+    "python3",
+    "python",
+    "file",
+    "stat",
+    "env",
+    "printenv",
+    "xargs",
+    "base64",
+    "jq",
 )
 FORBIDDEN_FRAGMENTS = ("..", "/world/private", "private/", "gold_world")
 
@@ -129,7 +143,7 @@ def relay_client(
     )
 
 
-def call_model(prompt: str, client: ModelClient, max_tokens: int = 500) -> str:
+def call_model(prompt: str, client: ModelClient, max_tokens: int = 2048) -> str:
     """One model call. Retries live inside the client; a dead endpoint raises,
     and the caller records the attempt honestly.
 
@@ -165,6 +179,36 @@ def cleanup_sandbox(sandbox: Optional[Path]) -> None:
         shutil.rmtree(sandbox, ignore_errors=True)
 
 
+def _has_forbidden_path(line: str) -> bool:
+    """Reject traversal, home escapes, absolute host paths, and private-root fragments,
+    while allowing safe `/dev/null` and awk/sed `/pattern/` regex expressions."""
+    if any(fragment in line for fragment in FORBIDDEN_FRAGMENTS):
+        return True
+    try:
+        tokens = shlex.split(line)
+    except ValueError:
+        tokens = line.split()
+    cmd_head = tokens[0] if tokens else ""
+    for token in tokens:
+        cleaned = re.sub(r"^[0-9]*[<>]+", "", token).strip()
+        if not cleaned or cleaned == "/dev/null":
+            continue
+        if cleaned.startswith("~"):
+            return True
+        if cleaned.startswith("/"):
+            if cmd_head in ("awk", "sed") and (
+                re.match(r"^/[^/]+/", cleaned) or " " in cleaned or "{" in cleaned
+            ):
+                continue
+            return True
+        if re.search(
+            r"(?:~/|\.\./|/(?:etc|root|home|proc|sys|var|tmp|media|usr|opt)/)",
+            cleaned,
+        ):
+            return True
+    return False
+
+
 def extract_command(reply: str) -> Optional[str]:
     """The first whitelisted command in a model reply, or None.
 
@@ -172,19 +216,33 @@ def extract_command(reply: str) -> Optional[str]:
     sandbox is the tree the arm may read, and a command that tries to leave it
     is not a command, it is an exfiltration attempt.
     """
-    text = reply.replace("```", "").replace("`", "").strip()
+    from harness.minimal_arm import _is_tool_call_dict, _iter_json_objects, _translate_tool_call
+
+    stripped = reply.strip()
+    if not stripped:
+        return None
+
+    for obj in _iter_json_objects(stripped):
+        if _is_tool_call_dict(obj):
+            translated = _translate_tool_call(obj)
+            if translated and not _has_forbidden_path(translated):
+                first = translated.split()[0] if translated.split() else ""
+                if first in COMMAND_WHITELIST:
+                    return translated
+
+    text = stripped.replace("```bash", "").replace("```sh", "").replace("```", "").replace("`", "").strip()
     for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
-        # The arm's world is the sandbox: absolute paths and home-relative paths
-        # are escapes, and private-root fragments are the gold. Both refused,
-        # wherever they appear in the command.
+        if line.startswith("$ "):
+            line = line[2:].strip()
+        line = re.sub(r"^COMMAND\s*:\s*", "", line).strip()
+        if not line:
+            continue
+        if _has_forbidden_path(line):
+            return None
         tokens = line.split()
-        if any(token.startswith(("/", "~")) for token in tokens):
-            return None
-        if any(fragment in line for fragment in FORBIDDEN_FRAGMENTS):
-            return None
         if tokens and tokens[0] in COMMAND_WHITELIST:
             return line
     return None

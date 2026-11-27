@@ -21,10 +21,12 @@
 
 from __future__ import annotations
 
+import json
 import re
+import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 # Canonical stages, platform-neutral. Canonical event names are the familiar
 # Claude Code ones; STAGE_PATTERNS finds the equivalent on any other platform.
@@ -89,6 +91,9 @@ class GateContext:
     observed_hashes: Dict[str, str] = field(default_factory=dict)
     wall_seconds: float = 0.0
     model_call_seconds: float = 0.0
+    candidate_answer: Optional[str] = None
+    observed_stdout: str = ""
+    verification_done: bool = False
 
 
 class Gate:
@@ -240,6 +245,100 @@ class AntiHallucinationGate(Gate):
         return Verdict(True, gate=self.name)
 
 
+class EvidenceGroundingGate(Gate):
+    """Every proposed answer must match public required keys and be grounded in observed stdout.
+
+    Prevents mental transformation typos (e.g. reversing strings or counting lines
+    in prose instead of via shell/python3) without knowing any task family or gold:
+    if a candidate answer value never appeared in executed command stdout, bounce
+    ONCE so the arm computes and verifies it programmatically before committing.
+    """
+
+    name = "evidence_grounding"
+    stage = "pre_answer"
+
+    def check(self, context: GateContext) -> Verdict:
+        if not context.candidate_answer:
+            return Verdict(True, gate=self.name)
+        try:
+            parsed = json.loads(context.candidate_answer)
+        except json.JSONDecodeError:
+            return Verdict(
+                False,
+                f"{self.name}: candidate answer is not valid JSON",
+                gate=self.name,
+            )
+
+        if isinstance(parsed, dict) and context.required_keys:
+            missing = [k for k in context.required_keys if k not in parsed]
+            if missing:
+                return Verdict(
+                    False,
+                    f"{self.name}: missing required keys {missing}",
+                    gate=self.name,
+                )
+            empty_vals = [
+                k
+                for k in context.required_keys
+                if isinstance(parsed.get(k), str) and not parsed[k].strip()
+            ]
+            if empty_vals:
+                return Verdict(
+                    False,
+                    f"{self.name}: empty string value for required key(s) {empty_vals}",
+                    gate=self.name,
+                )
+
+        if context.verification_done:
+            return Verdict(True, gate=self.name)
+
+        values = _extract_leaf_values(parsed)
+        if not values:
+            return Verdict(True, gate=self.name)
+
+        stdout = context.observed_stdout or ""
+        if not stdout.strip():
+            return Verdict(
+                False,
+                f"{self.name}: no command stdout observed yet; run a shell or "
+                "python3 command to inspect the evidence file and compute the "
+                "exact value before answering",
+                gate=self.name,
+            )
+
+        ungrounded = [v for v in values if v not in stdout]
+        if ungrounded:
+            return Verdict(
+                False,
+                f"{self.name}: answer value(s) {ungrounded} were not directly "
+                "observed in command stdout; compute and print the exact value "
+                "using a shell or python3 command to avoid mental-computation "
+                "errors, then reply ANSWER: <json>",
+                gate=self.name,
+            )
+        return Verdict(True, gate=self.name)
+
+
+def _extract_leaf_values(obj: Any) -> List[str]:
+    """Extract non-empty scalar values from a candidate JSON answer."""
+    out: List[str] = []
+    if isinstance(obj, dict):
+        for val in obj.values():
+            out.extend(_extract_leaf_values(val))
+    elif isinstance(obj, list):
+        for item in obj:
+            out.extend(_extract_leaf_values(item))
+    elif isinstance(obj, bool):
+        pass
+    elif isinstance(obj, (int, float)):
+        out.append(str(obj))
+    elif isinstance(obj, str):
+        stripped = obj.strip()
+        if len(stripped) >= 2:
+            out.append(stripped)
+    return out
+
+
 class SandboxGate(Gate):
     """Commands and paths stay inside the arm's sandbox.
 
@@ -255,14 +354,70 @@ class SandboxGate(Gate):
             return Verdict(True, gate=self.name)
         command = context.command
 
-        for raw in re.findall(r"[\w./~-]+", command):
-            candidate = raw.lstrip("-")
-            if candidate.startswith(("/", "~/")) or candidate.startswith(".."):
-                resolved = Path(candidate).expanduser()
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            tokens = command.split()
+
+        cmd_head = tokens[0] if tokens else ""
+
+        for token in tokens:
+            cleaned = re.sub(r"^[0-9]*[<>]+", "", token).strip()
+            if not cleaned or cleaned == "/dev/null":
+                continue
+
+            # Explicit parent-directory traversal anywhere in a token.
+            if (
+                cleaned == ".."
+                or cleaned.startswith("../")
+                or "/../" in cleaned
+                or cleaned.endswith("/..")
+            ):
+                resolved = (context.sandbox / cleaned).expanduser()
                 if not _inside(resolved, context.sandbox):
                     return Verdict(
                         False,
-                        f"{self.name}: command reaches outside the sandbox: {raw}",
+                        f"{self.name}: command reaches outside the sandbox: {token}",
+                        gate=self.name,
+                    )
+
+            # Home-relative escape.
+            if cleaned == "~" or cleaned.startswith("~/"):
+                resolved = Path(cleaned).expanduser()
+                if not _inside(resolved, context.sandbox):
+                    return Verdict(
+                        False,
+                        f"{self.name}: command reaches outside the sandbox: {token}",
+                        gate=self.name,
+                    )
+
+            # Absolute path check (allowing awk/sed regex programs like '/PATTERN/').
+            if cleaned.startswith("/"):
+                if cmd_head in ("awk", "sed") and (
+                    re.match(r"^/[^/]+/", cleaned) or " " in cleaned or "{" in cleaned
+                ):
+                    pass
+                else:
+                    resolved = Path(cleaned).expanduser()
+                    if not _inside(resolved, context.sandbox):
+                        return Verdict(
+                            False,
+                            f"{self.name}: command reaches outside the sandbox: {token}",
+                            gate=self.name,
+                        )
+
+            # Embedded escapes inside inline scripts (e.g. python3 -c "open('/etc/passwd')").
+            for embedded in re.findall(r"(?:~/|\.\./|/(?:etc|root|home|proc|sys|var|tmp|media|usr|opt)/)[^\s'\"`)]*", cleaned):
+                if embedded == "/dev/null":
+                    continue
+                if embedded.startswith(".."):
+                    target = (context.sandbox / embedded).expanduser()
+                else:
+                    target = Path(embedded).expanduser()
+                if not _inside(target, context.sandbox):
+                    return Verdict(
+                        False,
+                        f"{self.name}: command reaches outside the sandbox: {embedded}",
                         gate=self.name,
                     )
 
@@ -308,7 +463,8 @@ class GateEngine:
         self.repairs: List[Dict[str, str]] = []
 
     def run(self, context: GateContext) -> Verdict:
-        """Run every gate for the stage. First BLOCK wins; repairs are recorded."""
+        """Run every gate for the stage. First BLOCK wins; repairs are returned and recorded."""
+        last_repair: Optional[Verdict] = None
         for gate in self.gates:
             if gate.stage != context.stage:
                 continue
@@ -322,9 +478,14 @@ class GateEngine:
                         "reason": verdict.reason,
                     }
                 )
+                last_repair = verdict
+                if context.stage == "pre_tool" and not verdict.repair.startswith(
+                    "re-read "
+                ):
+                    context.command = verdict.repair
             if not verdict.allowed:
                 return verdict
-        return ALLOW
+        return last_repair or ALLOW
 
 
 def default_gates() -> List[Gate]:
@@ -332,6 +493,7 @@ def default_gates() -> List[Gate]:
     return [
         CompletionGate(),
         OutputValidationGate(),
+        EvidenceGroundingGate(),
         ReadStreakGate(),
         ModelCallTimeoutGate(),
         AntiHallucinationGate(),

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>verdict-bench — APEX Evaluation Scorecard</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #121a2f;
+    --panel-alt: #18233f;
+    --border: #253459;
+    --text: #e6edf7;
+    --muted: #93a4c3;
+    --accent: #38bdf8;
+    --pass-bg: rgba(16, 185, 129, 0.16);
+    --pass-fg: #34d399;
+    --warn-bg: rgba(245, 158, 11, 0.16);
+    --warn-fg: #fbbf24;
+    --fail-bg: rgba(244, 63, 94, 0.16);
+    --fail-fg: #fb7185;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    line-height: 1.5;
+    padding: 28px 20px 56px;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+  .header {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start;
+    gap: 16px; padding: 24px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 20px;
+  }
+  .eyebrow {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+    font-weight: 700; margin-bottom: 4px;
+  }
+  h1 { margin: 0 0 8px; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  h2 { margin: 0 0 14px; font-size: 17px; font-weight: 600; color: #f8fafc; }
+  h4 { margin: 0 0 8px; font-size: 14px; color: var(--accent); }
+  .meta-line { font-size: 13px; color: var(--muted); }
+  .meta-line code { color: var(--text); background: var(--panel-alt); padding: 2px 6px; border-radius: 4px; }
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .kpi-value { font-size: 22px; font-weight: 700; margin: 4px 0 2px; }
+  .kpi-sub { font-size: 12px; color: var(--muted); }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 20px;
+  }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); background: var(--panel-alt); white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+  .muted { color: var(--muted); }
+  .arm-name { font-weight: 700; color: #f8fafc; white-space: nowrap; }
+  .rank { color: var(--accent); font-weight: 700; }
+  .bar-wrap {
+    width: 110px; height: 6px; background: var(--panel-alt); border-radius: 99px;
+    overflow: hidden; margin-bottom: 4px;
+  }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #34d399); border-radius: 99px; }
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px;
+    font-weight: 700; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .badge-pass { background: var(--pass-bg); color: var(--pass-fg); border: 1px solid rgba(52, 211, 153, 0.35); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid rgba(251, 191, 36, 0.35); }
+  .badge-fail { background: var(--fail-bg); color: var(--fail-fg); border: 1px solid rgba(251, 113, 133, 0.35); }
+  .badge-muted { background: var(--panel-alt); color: var(--muted); border: 1px solid var(--border); }
+  .pill {
+    display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700;
+  }
+  .pill-dev { background: rgba(56, 189, 248, 0.14); color: #7dd3fc; }
+  .pill-test { background: rgba(168, 85, 247, 0.18); color: #d8b4fe; }
+  .pill-unknown { background: var(--panel-alt); color: var(--muted); }
+  .heat-high { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; font-weight: 600; }
+  .heat-mid { background: rgba(245, 158, 11, 0.14); color: #fcd34d; font-weight: 600; }
+  .heat-low { background: rgba(244, 63, 94, 0.14); color: #fda4af; font-weight: 600; }
+  .heat-na { color: var(--muted); }
+  .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .disc-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px; margin-top: 16px;
+  }
+  .disc-card {
+    background: var(--panel-alt); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .disc-card ul, .audit-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; }
+  .disc-card li, .audit-list li { margin-bottom: 4px; }
+  .alert-danger {
+    margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+    background: var(--fail-bg); border: 1px solid rgba(251, 113, 133, 0.45);
+    color: var(--fail-fg); font-size: 13px;
+  }
+  .footer-note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div>
+      <div class="eyebrow">verdict-bench // APEX Evaluation Scorecard</div>
+      <h1>Multi-Arm Benchmark Report</h1>
+      <div class="meta-line">
+        Rule v1 &middot; Target <code>70%</code> &middot;
+        rows <code>8110bc00185bb1f5</code> &middot;
+        gold <code>90dc21c75f8a326a</code> &middot;
+        split <code>dfe0eb42f1122c62</code>
+      </div>
+      <div class="meta-line" style="margin-top:6px;">Model route(s): <code>nvidia/nemotron-3-ultra-550b-a55b</code> via <code>http://127.0.0.1:8787/v1</code></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="eyebrow">Independent Verdict</div>
+      <span class="badge badge-pass" style="font-size:14px;padding:6px 14px;">PASS</span>
+    </div>
+  </header>
+
+  <section class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Overall Leader</div>
+      <div class="kpi-value">GATED &middot; 100%</div>
+      <div class="kpi-sub">25/25 tasks (Wilson LB 87%)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Held-Out Test Leader</div>
+      <div class="kpi-value">GATED &middot; 100%</div>
+      <div class="kpi-sub">10/10 held-out test tasks</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Attempts &amp; Voids</div>
+      <div class="kpi-value">50 total &middot; 0 voided</div>
+      <div class="kpi-sub">2 arm(s) across 25 task(s)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custody &amp; Model Parity</div>
+      <div class="kpi-value"><span class="badge badge-pass">VERIFIED</span></div>
+      <div class="kpi-sub">Distinct models: 1 &middot; Overflows: 0</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>1. Executive Leaderboard</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th><th>Arm</th><th>Overall Pass@1</th><th>Wilson 95% LB</th>
+            <th>Dev Pass@1</th><th>Held-Out Test</th><th>Criteria</th><th>Valid JSON</th>
+            <th>Avg Steps</th><th>Avg Calls</th><th>Avg Wall</th><th>Blocks / Repairs</th><th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody><tr><td class='mono rank'>#1</td><td class='arm-name'>GATED</td><td><div class='bar-wrap'><div class='bar-fill' style='width:100.0%'></div></div><span class='mono'>25/25 (100%)</span></td><td class='mono'>87%</td><td class='mono'>15/15 (100%)</td><td class='mono'>10/10 (100%)</td><td class='mono'>25/25</td><td class='mono'>100%</td><td class='mono'>3.5</td><td class='mono'>3.5</td><td class='mono'>46.1s</td><td class='mono'>3 / 0</td><td><span class='badge badge-pass'>PASS</span></td></tr><tr><td class='mono rank'>#2</td><td class='arm-name'>MINIMAL</td><td><div class='bar-wrap'><div class='bar-fill' style='width:100.0%'></div></div><span class='mono'>25/25 (100%)</span></td><td class='mono'>87%</td><td class='mono'>15/15 (100%)</td><td class='mono'>10/10 (100%)</td><td class='mono'>25/25</td><td class='mono'>100%</td><td class='mono'>3.7</td><td class='mono'>3.7</td><td class='mono'>37.9s</td><td class='mono'>0 / 0</td><td><span class='badge badge-pass'>PASS</span></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Per-Domain Capability Matrix</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Domain</th><th>Tasks</th><th>GATED</th><th>MINIMAL</th></tr></thead>
+        <tbody><tr><td>command-output-transformation</td><td class='mono muted'>5 (3D/2T)</td><td class='mono heat-high'>5/5 (100%)</td><td class='mono heat-high'>5/5 (100%)</td></tr><tr><td>config-parsing</td><td class='mono muted'>5 (3D/2T)</td><td class='mono heat-high'>5/5 (100%)</td><td class='mono heat-high'>5/5 (100%)</td></tr><tr><td>environment-variable-resolution</td><td class='mono muted'>5 (3D/2T)</td><td class='mono heat-high'>5/5 (100%)</td><td class='mono heat-high'>5/5 (100%)</td></tr><tr><td>file-hash-verification</td><td class='mono muted'>5 (3D/2T)</td><td class='mono heat-high'>5/5 (100%)</td><td class='mono heat-high'>5/5 (100%)</td></tr><tr><td>log-pattern-detection</td><td class='mono muted'>5 (3D/2T)</td><td class='mono heat-high'>5/5 (100%)</td><td class='mono heat-high'>5/5 (100%)</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class='card'><h2>3. Pairwise Exact McNemar &amp; Discordant Attribution</h2><div class='table-scroll'><table><thead><tr><th>Pair</th><th>Paired</th><th>First Only</th><th>Second Only</th><th>Both Pass</th><th>Both Fail</th><th>Discordant</th><th>Exact p</th><th>Sig</th></tr></thead><tbody><tr><td><strong>GATED vs MINIMAL</strong></td><td class='mono'>25</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>25</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>1.0000</td><td><span class='badge badge-muted'>n.s.</span></td></tr></tbody></table></div><div class='disc-grid'><div class='disc-card'><h4>GATED vs MINIMAL</h4><p class='muted'>Perfect agreement on all 25 paired tasks.</p></div></div></section>
+
+  <section class="card">
+    <h2>4. Full Task Outcome Matrix</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Task</th><th>Split</th><th>Domain</th><th>GATED</th><th>MINIMAL</th></tr></thead>
+        <tbody><tr><td class='mono'><strong>W2-000</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>config-parsing</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-001</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>log-pattern-detection</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-002</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>file-hash-verification</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-003</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>command-output-transformation</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>5s / 5c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-004</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>environment-variable-resolution</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-005</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>config-parsing</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td></tr><tr><td class='mono'><strong>W2-006</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>log-pattern-detection</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-007</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>file-hash-verification</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-008</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>command-output-transformation</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>5s / 5c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-009</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>environment-variable-resolution</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>5s / 5c</div></td></tr><tr><td class='mono'><strong>W2-010</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>config-parsing</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td></tr><tr><td class='mono'><strong>W2-011</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>log-pattern-detection</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-012</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>file-hash-verification</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-013</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>command-output-transformation</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-014</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>environment-variable-resolution</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td></tr><tr><td class='mono'><strong>W2-015</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>config-parsing</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td></tr><tr><td class='mono'><strong>W2-016</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>log-pattern-detection</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>5s / 5c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-017</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>file-hash-verification</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>5s / 5c</div></td></tr><tr><td class='mono'><strong>W2-018</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>command-output-transformation</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-019</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>environment-variable-resolution</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>6s / 6c</div></td></tr><tr><td class='mono'><strong>W2-020</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>config-parsing</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td></tr><tr><td class='mono'><strong>W2-021</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>log-pattern-detection</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr><tr><td class='mono'><strong>W2-022</strong></td><td><span class='pill pill-test'>[TEST]</span></td><td>file-hash-verification</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>2s / 2c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td></tr><tr><td class='mono'><strong>W2-023</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>command-output-transformation</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>3s / 3c</div></td></tr><tr><td class='mono'><strong>W2-024</strong></td><td><span class='pill pill-dev'>[DEV]</span></td><td>environment-variable-resolution</td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>8s / 8c</div></td><td><span class='badge badge-pass'>PASS</span><div class='sub mono'>4s / 4c</div></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>5. Failure-Mode Telemetry &amp; Gate Activity</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Arm</th><th>Live</th><th>Failed</th><th>Empty</th><th>Invalid JSON</th>
+            <th>Overflows</th><th>Failure Stopped Reasons</th><th>Gate Blocks</th><th>Repairs</th>
+          </tr>
+        </thead>
+        <tbody><tr><td class='arm-name'>GATED</td><td class='mono'>25</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>none</td><td class='mono'>evidence_grounding: 2, sandbox: 1</td><td class='mono'>none</td></tr><tr><td class='arm-name'>MINIMAL</td><td class='mono'>25</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>0</td><td class='mono'>none</td><td class='mono'>none</td><td class='mono'>none</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>6. Void Policy, Budget Parity &amp; Cryptographic Custody</h2>
+    <div class="table-scroll" style="margin-bottom:14px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Arm</th><th>Models</th><th>Total Steps</th><th>Total Calls</th>
+            <th>Total Wall (s)</th><th>Overflows</th><th>Voided</th>
+          </tr>
+        </thead>
+        <tbody><tr><td class='arm-name'>GATED</td><td class='mono'>nvidia/nemotron-3-ultra-550b-a55b</td><td class='mono'>88</td><td class='mono'>88</td><td class='mono'>1151.7s</td><td class='mono'>0</td><td class='mono'>0</td></tr><tr><td class='arm-name'>MINIMAL</td><td class='mono'>nvidia/nemotron-3-ultra-550b-a55b</td><td class='mono'>93</td><td class='mono'>93</td><td class='mono'>948.1s</td><td class='mono'>0</td><td class='mono'>0</td></tr></tbody>
+      </table>
+    </div>
+    <h4>Void-and-Rerun Audit (0 of 50 voided)</h4>
+    <p class='muted'>0 attempts voided in this run.</p>
+    
+  </section>
+
+  <section class="card">
+    <h2>7. Disclosures &amp; Gate Blind Spots</h2>
+    <p class="muted">The gates cannot check:</p>
+    <ul class="audit-list"><li>that the tasks are actually hard (a trivially guessable world passes every gate)</li><li>that the answer formulas are absent from the MODEL&#x27;s context window at runtime</li><li>that an arm cannot reach gold through the model, a tool, or the OS</li><li>that the gold is CORRECT - a verifiable wrong answer is still wrong</li><li>that the run was fair (budget, load, retries) - that is bench.py&#x27;s job</li></ul>
+    <p class="footer-note">
+      Generated deterministically by <code>python -m runner.report</code> from committed artifacts.
+      No timestamps; byte-identical on regeneration.
+    </p>
+  </section>
+</div>
+</body>
+</html>

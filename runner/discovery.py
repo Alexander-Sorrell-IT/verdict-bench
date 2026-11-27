@@ -13,20 +13,26 @@
 
 from __future__ import annotations
 
-import json
-import os
+from datetime import datetime, timezone
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 DISCOVERY_PATH = Path("discovery.md")
 
 
-def _run(cmd: List[str], timeout: int = 10) -> Dict[str, Any]:
-    """Run a command safely, capture stdout/stderr/exit code."""
+def _run(
+    cmd: List[str], timeout: int = 10, cwd: Optional[Path] = None
+) -> Dict[str, Any]:
+    """Run a command safely inside cwd, capture stdout/stderr/exit code."""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(cwd) if cwd is not None else None,
+        )
         return {
             "cmd": " ".join(cmd),
             "exit_code": result.returncode,
@@ -67,8 +73,6 @@ def discover_available_tools() -> List[Dict[str, Any]]:
         "sh",
         "python3",
         "python",
-        "curl",
-        "wget",
         "ls",
         "cat",
         "find",
@@ -80,21 +84,14 @@ def discover_available_tools() -> List[Dict[str, Any]]:
         "file",
         "stat",
         "which",
-        "env",
-        "printenv",
-        "ps",
-        "kill",
-        "sleep",
-        "mkdir",
-        "touch",
-        "cp",
-        "mv",
-        "rm",
-        "chmod",
-        "tar",
-        "zip",
-        "unzip",
-        "openssl",
+        "wc",
+        "sort",
+        "uniq",
+        "cut",
+        "tr",
+        "rev",
+        "head",
+        "tail",
         "md5sum",
         "sha256sum",
         "base64",
@@ -118,30 +115,21 @@ def discover_available_tools() -> List[Dict[str, Any]]:
     return results
 
 
-def discover_filesystem() -> Dict[str, Any]:
-    """Map the filesystem layout."""
+def discover_filesystem(cwd: Optional[Path] = None) -> Dict[str, Any]:
+    """Map the sandbox filesystem layout strictly inside cwd.
+
+    Never scans host `/`, `$HOME`, or host `env` (which would violate sandbox
+    confinement and risk exposing host secrets or repository files).
+    """
+    target_cwd = (cwd or Path.cwd()).resolve()
     results: Dict[str, Any] = {}
 
-    root_listing = _run(["ls", "-la", "/"])
-    results["root"] = root_listing
-
-    home_listing = _run(["ls", "-la", os.path.expanduser("~")])
-    results["home"] = home_listing
-
-    cwd_listing = _run(["ls", "-la", "."])
-    results["cwd"] = cwd_listing
-
-    env_vars = _run(["env"])
-    results["environment"] = env_vars
-
-    path_env = os.environ.get("PATH", "")
-    results["path"] = path_env
-
-    # Find common config/schema/example files
-    config_find = _run(
+    results["cwd"] = _run(["ls", "-la", "."], cwd=target_cwd)
+    results["tree"] = _run(["find", ".", "-maxdepth", "3"], cwd=target_cwd)
+    results["config_files"] = _run(
         [
             "find",
-            "/",
+            ".",
             "-maxdepth",
             "3",
             "(",
@@ -162,26 +150,30 @@ def discover_filesystem() -> Dict[str, Any]:
             "-o",
             "-name",
             "*.cfg",
+            "-o",
+            "-name",
+            "*.conf",
             ")",
-            "2>/dev/null",
-        ]
+        ],
+        cwd=target_cwd,
     )
-    results["config_files"] = config_find
 
     return results
 
 
 def discover_output_expectations(cwd: Path) -> Dict[str, Any]:
-    """Look for READMEs, task descriptions, schema files, example outputs."""
+    """Look for READMEs, task descriptions, schema files, example outputs inside cwd."""
     results: Dict[str, Any] = {}
 
     # Look for README-like files in cwd
     readme_files = list(cwd.glob("README*")) + list(cwd.glob("*.md"))
-    results["readme_files"] = [str(p.relative_to(cwd)) for p in readme_files]
+    results["readme_files"] = sorted(str(p.relative_to(cwd)) for p in readme_files)
 
     # Look for schema files
     schema_files = list(cwd.glob("**/*.json")) + list(cwd.glob("**/*.yaml"))
-    results["schema_like_files"] = [str(p.relative_to(cwd)) for p in schema_files[:20]]
+    results["schema_like_files"] = sorted(
+        str(p.relative_to(cwd)) for p in schema_files[:20]
+    )
 
     # Try to read any task description
     task_desc = None
@@ -196,17 +188,17 @@ def discover_output_expectations(cwd: Path) -> Dict[str, Any]:
     return results
 
 
-def probe_failure_modes() -> List[Dict[str, Any]]:
-    """Try intentionally bad commands to learn error message formats."""
+def probe_failure_modes(cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Try intentionally bad commands inside the sandbox to learn error message formats."""
+    target_cwd = (cwd or Path.cwd()).resolve()
     probes = [
-        (["ls", "/nonexistent_path_xyz"], "file not found"),
-        (["cat", "/nonexistent_file"], "file not found"),
+        (["ls", "./__nonexistent_path_xyz__"], "file not found"),
+        (["cat", "./__nonexistent_file__"], "file not found"),
         (["unknown_command_xyz"], "command not found"),
-        (["curl", "http://127.0.0.1:1/invalid"], "connection refused"),
     ]
     results: List[Dict[str, Any]] = []
     for cmd, label in probes:
-        res = _run(cmd, timeout=5)
+        res = _run(cmd, timeout=5, cwd=target_cwd)
         results.append(
             {
                 "label": label,
@@ -220,19 +212,21 @@ def probe_failure_modes() -> List[Dict[str, Any]]:
 
 
 def run_discovery(cwd: Optional[Path] = None) -> Path:
-    """Run full environment discovery and write discovery.md."""
-    cwd = cwd or Path.cwd()
+    """Run sandbox-scoped environment discovery and write discovery.md inside cwd."""
+    target_cwd = (cwd or Path.cwd()).resolve()
 
     tools = discover_available_tools()
-    fs = discover_filesystem()
-    expectations = discover_output_expectations(cwd)
-    failures = probe_failure_modes()
+    fs = discover_filesystem(target_cwd)
+    expectations = discover_output_expectations(target_cwd)
+    failures = probe_failure_modes(target_cwd)
 
     lines: List[str] = []
     lines.append("# Environment Discovery Report")
     lines.append("")
-    lines.append(f"Generated: {os.popen('date -u +%Y-%m-%dT%H:%M:%SZ').read().strip()}")
-    lines.append(f"Working directory: {cwd}")
+    lines.append(
+        f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+    )
+    lines.append(f"Working directory: {target_cwd}")
     lines.append("")
 
     lines.append("## Available Tools")
@@ -240,20 +234,15 @@ def run_discovery(cwd: Optional[Path] = None) -> Path:
         lines.append(f"- {t['tool']}: {t['path']} ({t['version']})")
     lines.append("")
 
-    lines.append("## Filesystem Layout")
-    lines.append("### Root")
-    lines.append("```")
-    lines.append(fs.get("root", {}).get("stdout", "")[:1500])
-    lines.append("```")
-    lines.append("")
-    lines.append("### Home")
-    lines.append("```")
-    lines.append(fs.get("home", {}).get("stdout", "")[:1500])
-    lines.append("```")
-    lines.append("")
+    lines.append("## Sandbox Filesystem Layout")
     lines.append("### CWD")
     lines.append("```")
     lines.append(fs.get("cwd", {}).get("stdout", "")[:1500])
+    lines.append("```")
+    lines.append("")
+    lines.append("### Tree (maxdepth 3)")
+    lines.append("```")
+    lines.append(fs.get("tree", {}).get("stdout", "")[:1500])
     lines.append("```")
     lines.append("")
 
@@ -276,8 +265,9 @@ def run_discovery(cwd: Optional[Path] = None) -> Path:
         lines.append("")
 
     discovery_md = "\n".join(lines)
-    DISCOVERY_PATH.write_text(discovery_md)
-    return DISCOVERY_PATH
+    out_path = target_cwd / DISCOVERY_PATH.name
+    out_path.write_text(discovery_md)
+    return out_path
 
 
 if __name__ == "__main__":

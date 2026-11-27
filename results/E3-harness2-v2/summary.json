@@ -1,0 +1,22 @@
+{
+  "arm": "C",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "base_url": "http://127.0.0.1:8787/v1",
+  "budget": {
+    "max_steps": 400,
+    "max_model_calls": 200,
+    "max_wall_seconds": 2700.0
+  },
+  "probes": 3,
+  "dev_lessons_count": 15,
+  "receipts_ok": true,
+  "model_calls": 115,
+  "wall_s": 1005.2,
+  "passed": 24,
+  "total": 25,
+  "dev_passed": 14,
+  "dev_total": 15,
+  "test_passed": 10,
+  "test_total": 10,
+  "rows": "results/E3-harness2-v2/results.jsonl"
+}

@@ -1,0 +1,517 @@
+{
+  "salt": "verdict-bench:v1",
+  "rows": [
+    {
+      "seq": 0,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "base_url": "http://127.0.0.1:8787/v1",
+      "budget": "{\"max_model_calls\": 200, \"max_steps\": 400, \"max_wall_seconds\": 2700.0}",
+      "gold_sha256": "90dc21c75f8a326af50d2169e5a51247f9a3f36fc1347c08a7af6a4cea439289",
+      "kind": "run_manifest",
+      "manifest_sha256": "34d4b4c359b5e43cbe4b41ebcc757e49918127d0aedd34f990b6e6d8f6e0ad18",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "provider": "nvidia",
+      "hash": "18b1dc67412d0d2aadf949607506bc88ce8f65e0b73a37a4fd8734208092ec88"
+    },
+    {
+      "seq": 1,
+      "prev_hash": "18b1dc67412d0d2aadf949607506bc88ce8f65e0b73a37a4fd8734208092ec88",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-000",
+      "hash": "8993eaa2686f80f586c8df8db25d9600aae57571a571bf333b390b4231017883"
+    },
+    {
+      "seq": 2,
+      "prev_hash": "8993eaa2686f80f586c8df8db25d9600aae57571a571bf333b390b4231017883",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-001",
+      "hash": "3b6ae0d67af3f6de93594c587fd3e67641adc9cb0ee9203b45d32ca90036f731"
+    },
+    {
+      "seq": 3,
+      "prev_hash": "3b6ae0d67af3f6de93594c587fd3e67641adc9cb0ee9203b45d32ca90036f731",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-002",
+      "hash": "548297185687a087c5bba533beb4dacbc5f7acd9a33f54af6f91d5a2c5b797db"
+    },
+    {
+      "seq": 4,
+      "prev_hash": "548297185687a087c5bba533beb4dacbc5f7acd9a33f54af6f91d5a2c5b797db",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-003",
+      "hash": "f44471f01635279ffa93efd6dad345ab8df476621bc26bf98c6ef4ed65328f6c"
+    },
+    {
+      "seq": 5,
+      "prev_hash": "f44471f01635279ffa93efd6dad345ab8df476621bc26bf98c6ef4ed65328f6c",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-004",
+      "hash": "eb5210340e843ba6d88deae2a714cb6edfec25cdbe9fb4578abe8904a8f701fe"
+    },
+    {
+      "seq": 6,
+      "prev_hash": "eb5210340e843ba6d88deae2a714cb6edfec25cdbe9fb4578abe8904a8f701fe",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-005",
+      "hash": "a12b5471b6682db26100ae49b9636889c0ac7f83f832f95f8c9922e1e02399cd"
+    },
+    {
+      "seq": 7,
+      "prev_hash": "a12b5471b6682db26100ae49b9636889c0ac7f83f832f95f8c9922e1e02399cd",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-006",
+      "hash": "81c24c14f2abb03cf234c0e17e66d9bb13d0ac959ef567926e7467cc2dd56620"
+    },
+    {
+      "seq": 8,
+      "prev_hash": "81c24c14f2abb03cf234c0e17e66d9bb13d0ac959ef567926e7467cc2dd56620",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-007",
+      "hash": "27989de6bc02cd39c2761e5bec4c444363aa80a498649ebe3d9b9ba22cceb60f"
+    },
+    {
+      "seq": 9,
+      "prev_hash": "27989de6bc02cd39c2761e5bec4c444363aa80a498649ebe3d9b9ba22cceb60f",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-008",
+      "hash": "250687f27fac46e5762ac08724bb52b756ef97fe2d39631832af79b0c069c38b"
+    },
+    {
+      "seq": 10,
+      "prev_hash": "250687f27fac46e5762ac08724bb52b756ef97fe2d39631832af79b0c069c38b",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-009",
+      "hash": "97748714ccdb99126ff29ad62abce01b66c21f3e1bf0ed0dbd723e61bf7a71aa"
+    },
+    {
+      "seq": 11,
+      "prev_hash": "97748714ccdb99126ff29ad62abce01b66c21f3e1bf0ed0dbd723e61bf7a71aa",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-010",
+      "hash": "08634579e16cbd207b211e83f64e06c029bf223fb7d13b7b57f0d8fffefd73aa"
+    },
+    {
+      "seq": 12,
+      "prev_hash": "08634579e16cbd207b211e83f64e06c029bf223fb7d13b7b57f0d8fffefd73aa",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-011",
+      "hash": "a55433a6ba3bf77454e60e3277ab6be70e981a016c9290fc7a48220f6468da4e"
+    },
+    {
+      "seq": 13,
+      "prev_hash": "a55433a6ba3bf77454e60e3277ab6be70e981a016c9290fc7a48220f6468da4e",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-012",
+      "hash": "b89cb31665c219e053acf2fe475ef91b1245775ae06bcbc1f823067b4b29aa49"
+    },
+    {
+      "seq": 14,
+      "prev_hash": "b89cb31665c219e053acf2fe475ef91b1245775ae06bcbc1f823067b4b29aa49",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-013",
+      "hash": "fcbe59e97b0f029db0233cff5c036feb8b6fe26795e8f45047c7cb29d834ce8f"
+    },
+    {
+      "seq": 15,
+      "prev_hash": "fcbe59e97b0f029db0233cff5c036feb8b6fe26795e8f45047c7cb29d834ce8f",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-014",
+      "hash": "90b9de18c5f7e86d4db5c0c2abaf608105aff64b86428ee4d45ecf4d6c122555"
+    },
+    {
+      "seq": 16,
+      "prev_hash": "90b9de18c5f7e86d4db5c0c2abaf608105aff64b86428ee4d45ecf4d6c122555",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-015",
+      "hash": "b765e69e12859c3b2189f00d4c561b43307c8b9742d9d0226bb445e70dd87bbc"
+    },
+    {
+      "seq": 17,
+      "prev_hash": "b765e69e12859c3b2189f00d4c561b43307c8b9742d9d0226bb445e70dd87bbc",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-016",
+      "hash": "b33eca18b2ef14ad37062ad63479b61a053fbc037d7d8d7d629a4ca4fba83758"
+    },
+    {
+      "seq": 18,
+      "prev_hash": "b33eca18b2ef14ad37062ad63479b61a053fbc037d7d8d7d629a4ca4fba83758",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-017",
+      "hash": "a28b8aabbfdeece2247a01f5ea12cff0122505a1b56b81bf8256493e5d59307b"
+    },
+    {
+      "seq": 19,
+      "prev_hash": "a28b8aabbfdeece2247a01f5ea12cff0122505a1b56b81bf8256493e5d59307b",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-018",
+      "hash": "43d32d5dd1c6548b61aa4c218b9606d27572b063ce7cf6b5225f277e3b721512"
+    },
+    {
+      "seq": 20,
+      "prev_hash": "43d32d5dd1c6548b61aa4c218b9606d27572b063ce7cf6b5225f277e3b721512",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-019",
+      "hash": "704c0ab491adf93d735ec238b7f32a081070e8d0c5faa9ae875b863c1034fb7d"
+    },
+    {
+      "seq": 21,
+      "prev_hash": "704c0ab491adf93d735ec238b7f32a081070e8d0c5faa9ae875b863c1034fb7d",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-020",
+      "hash": "61aa79cd72783727cc9dbe327c28b418e512e8629e573352e0782910f9403c1c"
+    },
+    {
+      "seq": 22,
+      "prev_hash": "61aa79cd72783727cc9dbe327c28b418e512e8629e573352e0782910f9403c1c",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-021",
+      "hash": "68577abfc9bf352ea5fa55fe98eb76b7a01fdfcd3e817c9529bc5a81fc4f3b30"
+    },
+    {
+      "seq": 23,
+      "prev_hash": "68577abfc9bf352ea5fa55fe98eb76b7a01fdfcd3e817c9529bc5a81fc4f3b30",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-022",
+      "hash": "a6e7858a3190df56cea9a529897d83d03d4deeef8c68c45b8bdaed08dc11758b"
+    },
+    {
+      "seq": 24,
+      "prev_hash": "a6e7858a3190df56cea9a529897d83d03d4deeef8c68c45b8bdaed08dc11758b",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-023",
+      "hash": "487b420191e24cbada1d71777fdb52ee5880ef808396503de072a4a954f17e90"
+    },
+    {
+      "seq": 25,
+      "prev_hash": "487b420191e24cbada1d71777fdb52ee5880ef808396503de072a4a954f17e90",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-024",
+      "hash": "a647be3beed4397397c9e502689724c4cbf87efe7efb7e24dd5e4e652f51731b"
+    },
+    {
+      "seq": 26,
+      "prev_hash": "a647be3beed4397397c9e502689724c4cbf87efe7efb7e24dd5e4e652f51731b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-000",
+      "hash": "57ea4dc30242693e88e634eb0dd8131b4c93c83780577f91907f08eb6d094a04"
+    },
+    {
+      "seq": 27,
+      "prev_hash": "57ea4dc30242693e88e634eb0dd8131b4c93c83780577f91907f08eb6d094a04",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-001",
+      "hash": "a7a2677e16d011f73bb5b8ddb54f36c2f6d1b83cf90e2e89638c500f7179d085"
+    },
+    {
+      "seq": 28,
+      "prev_hash": "a7a2677e16d011f73bb5b8ddb54f36c2f6d1b83cf90e2e89638c500f7179d085",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-002",
+      "hash": "d22a80c7987e572af253f7df2b7e14524f7a0c1a02105ee6044e29db6f124f8c"
+    },
+    {
+      "seq": 29,
+      "prev_hash": "d22a80c7987e572af253f7df2b7e14524f7a0c1a02105ee6044e29db6f124f8c",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-003",
+      "hash": "9a32bfd2312b3452d6276329ef83aa7d8fc2ec51c143ed4006eb4f5cc689045b"
+    },
+    {
+      "seq": 30,
+      "prev_hash": "9a32bfd2312b3452d6276329ef83aa7d8fc2ec51c143ed4006eb4f5cc689045b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-004",
+      "hash": "823b8999a694d1e4e816d3766fe663651a55a9d2fc300af977bee8a437bebfc9"
+    },
+    {
+      "seq": 31,
+      "prev_hash": "823b8999a694d1e4e816d3766fe663651a55a9d2fc300af977bee8a437bebfc9",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-005",
+      "hash": "6e4801f27b3c93b08b15b9192283cbab93bc553b49c39988ead79812a09d5cf2"
+    },
+    {
+      "seq": 32,
+      "prev_hash": "6e4801f27b3c93b08b15b9192283cbab93bc553b49c39988ead79812a09d5cf2",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-006",
+      "hash": "7cacb12ce91aadc39e317cb5b02fc7bd61785d14821dd30e26a192907bb29925"
+    },
+    {
+      "seq": 33,
+      "prev_hash": "7cacb12ce91aadc39e317cb5b02fc7bd61785d14821dd30e26a192907bb29925",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-007",
+      "hash": "5de22ff2bde5d4d00918414daf3b7772579a39d45c983056bc0267b2a84ddd1e"
+    },
+    {
+      "seq": 34,
+      "prev_hash": "5de22ff2bde5d4d00918414daf3b7772579a39d45c983056bc0267b2a84ddd1e",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-008",
+      "hash": "53ea580b76a84086765f2a870361c6475b332fe41423f0397599b4dd92fcdd6a"
+    },
+    {
+      "seq": 35,
+      "prev_hash": "53ea580b76a84086765f2a870361c6475b332fe41423f0397599b4dd92fcdd6a",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-009",
+      "hash": "4c91ea7c52cc6c589afbc0ac2556f17c6175132aa768cc952f23f4614270d0b0"
+    },
+    {
+      "seq": 36,
+      "prev_hash": "4c91ea7c52cc6c589afbc0ac2556f17c6175132aa768cc952f23f4614270d0b0",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-010",
+      "hash": "4f668f8999e8ffe4779722d648096427a1acde2f3cd6512e28afbed4fc90f382"
+    },
+    {
+      "seq": 37,
+      "prev_hash": "4f668f8999e8ffe4779722d648096427a1acde2f3cd6512e28afbed4fc90f382",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-011",
+      "hash": "e37437c98cef866e605e65b9f7d9e3f7b3f8b70bc59246fa54900a0a7c928f39"
+    },
+    {
+      "seq": 38,
+      "prev_hash": "e37437c98cef866e605e65b9f7d9e3f7b3f8b70bc59246fa54900a0a7c928f39",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-012",
+      "hash": "0cab4954df1ee9bb1e11905c7c3f79d2345ebc7fea4b0a10bef7ad1c945f9b68"
+    },
+    {
+      "seq": 39,
+      "prev_hash": "0cab4954df1ee9bb1e11905c7c3f79d2345ebc7fea4b0a10bef7ad1c945f9b68",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-013",
+      "hash": "1eddbd7a3d715fa8accc77a74254d091a56f281d1dd4dc0a080e413f1155de0e"
+    },
+    {
+      "seq": 40,
+      "prev_hash": "1eddbd7a3d715fa8accc77a74254d091a56f281d1dd4dc0a080e413f1155de0e",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-014",
+      "hash": "ef2616ad16596b400df285c6b53ad22a784ac41f5a2461af449bd2fe1a6cf005"
+    },
+    {
+      "seq": 41,
+      "prev_hash": "ef2616ad16596b400df285c6b53ad22a784ac41f5a2461af449bd2fe1a6cf005",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-015",
+      "hash": "0297fe9614ad2b5be38ffec73840f0b131a0756e23d570c8e8b18d1a7178c904"
+    },
+    {
+      "seq": 42,
+      "prev_hash": "0297fe9614ad2b5be38ffec73840f0b131a0756e23d570c8e8b18d1a7178c904",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-016",
+      "hash": "7dc9c78063aca5bc63908c6a6001534593578deba131bf3400ff2fa4005dc168"
+    },
+    {
+      "seq": 43,
+      "prev_hash": "7dc9c78063aca5bc63908c6a6001534593578deba131bf3400ff2fa4005dc168",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-017",
+      "hash": "71cfe712b3bb366376b26b19980c7ada084c6a4fe49875dd725d3ea39607dc5b"
+    },
+    {
+      "seq": 44,
+      "prev_hash": "71cfe712b3bb366376b26b19980c7ada084c6a4fe49875dd725d3ea39607dc5b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-018",
+      "hash": "0e32626e92e35ded4bc7b0cf69dc42f2eb3032d37866e9188e041ca0bc383306"
+    },
+    {
+      "seq": 45,
+      "prev_hash": "0e32626e92e35ded4bc7b0cf69dc42f2eb3032d37866e9188e041ca0bc383306",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-019",
+      "hash": "c7b4d4eb7a95e2d30d55a43bffcce7850077e98ff533594bc58740396d4bda4c"
+    },
+    {
+      "seq": 46,
+      "prev_hash": "c7b4d4eb7a95e2d30d55a43bffcce7850077e98ff533594bc58740396d4bda4c",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-020",
+      "hash": "e2f30bac04757e6d64fb7e4e1157702c84ba770aeae9838f4717b1fa45287ee7"
+    },
+    {
+      "seq": 47,
+      "prev_hash": "e2f30bac04757e6d64fb7e4e1157702c84ba770aeae9838f4717b1fa45287ee7",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-021",
+      "hash": "4a785ffe24f50695ca0b4fbeff25787e893c1f0432b9b45b10bc81a92e1e9b43"
+    },
+    {
+      "seq": 48,
+      "prev_hash": "4a785ffe24f50695ca0b4fbeff25787e893c1f0432b9b45b10bc81a92e1e9b43",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-022",
+      "hash": "19736106d47b07462974cfef49a05b7d599fb6cbee7d6f960efa15a38051f29e"
+    },
+    {
+      "seq": 49,
+      "prev_hash": "19736106d47b07462974cfef49a05b7d599fb6cbee7d6f960efa15a38051f29e",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-023",
+      "hash": "299a54010f8d0cd8cb35a7c1538fed9cda411ee0ff3634b6e82e7a9bffc4b6cc"
+    },
+    {
+      "seq": 50,
+      "prev_hash": "299a54010f8d0cd8cb35a7c1538fed9cda411ee0ff3634b6e82e7a9bffc4b6cc",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "true",
+      "reason": "exact hash match",
+      "task_id": "W2-024",
+      "hash": "b662a8b6792076a9a3a749d3d0a9e7d1474d09e6c8a93b942f9eb1b1bcdd3cc0"
+    }
+  ]
+}

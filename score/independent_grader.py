@@ -21,8 +21,8 @@
 #   PASS         - pass@1 AND its 95% Wilson lower bound both clear the target
 #   INCONCLUSIVE - the estimate clears but the bound does not, or the arm
 #                  returned an empty answer on more than EMPTY_RATE_CEILING of
-#                  its tasks (answered too little to score != scored badly)
-#   REJECT       - otherwise, or a voided rep, or a reconciliation failure
+#                  its live tasks (answered too little to score != scored badly)
+#   REJECT       - otherwise, or a reconciliation failure
 #
 # The run's verdict is the weakest arm's: one REJECT invalidates the comparison.
 
@@ -48,10 +48,11 @@ from receipts import (  # noqa: E402
 from stats import (  # noqa: E402
     StatsError,
     index_by_task,
+    is_void,
     load_attempts,
     mcnemar,
     summarise_arm,
-)  # noqa: E402
+)
 
 RULE_VERSION = "1"
 EMPTY_RATE_CEILING = 0.20
@@ -98,6 +99,59 @@ def _empty_rate(rows: Sequence[Dict[str, Any]]) -> float:
     )
 
 
+def _split_map(split_path: Optional[Path]) -> Dict[str, str]:
+    """Load task_id -> 'dev' | 'test' from a frozen split file, if supplied."""
+    if split_path is None or not Path(split_path).is_file():
+        return {}
+    doc = json.loads(Path(split_path).read_text())
+    mapping: Dict[str, str] = {}
+    for split_name in ("dev", "test"):
+        for entry in doc.get(split_name, []):
+            task_id = entry.get("task_id")
+            if task_id:
+                mapping[str(task_id)] = split_name
+    return mapping
+
+
+def _summarise_splits(
+    arm_name: str,
+    attempts: Sequence[Any],
+    live_rows: Sequence[Dict[str, Any]],
+    split_map: Dict[str, str],
+) -> Dict[str, Dict[str, Any]]:
+    """Compute dev vs. held-out test breakdown for one arm's live attempts."""
+    row_splits: Dict[str, str] = {}
+    for row in live_rows:
+        task_id = str(row.get("task_id", ""))
+        raw_split = str(row.get("split", "")).strip().lower()
+        if task_id and raw_split and raw_split != "unknown":
+            row_splits[task_id] = raw_split
+
+    buckets: Dict[str, List[Any]] = {}
+    for attempt in attempts:
+        split_name = split_map.get(attempt.task_id) or row_splits.get(
+            attempt.task_id, "unknown"
+        )
+        buckets.setdefault(split_name, []).append(attempt)
+
+    ordered_keys = [k for k in ("dev", "test") if k in buckets]
+    ordered_keys.extend(sorted(k for k in buckets if k not in ("dev", "test")))
+
+    breakdown: Dict[str, Dict[str, Any]] = {}
+    for split_name in ordered_keys:
+        summary = summarise_arm(f"{arm_name}:{split_name}", buckets[split_name])
+        breakdown[split_name] = {
+            "tasks_scored": summary["tasks_scored"],
+            "tasks_passed": summary["tasks_passed"],
+            "pass_at_1": summary["pass_at_1"],
+            "pass_at_1_lower_95": summary["pass_at_1_lower_95"],
+            "criteria_passed": summary["criteria_passed"],
+            "criteria_total": summary["criteria_total"],
+            "criteria_rate": summary["criteria_rate"],
+        }
+    return breakdown
+
+
 def verdict_for(summary: Dict[str, Any], empty_rate: float, target: float) -> str:
     """The rules, fixed before results exist. See the module docstring."""
     if empty_rate > EMPTY_RATE_CEILING:
@@ -129,11 +183,17 @@ def grade_run(
     for attempt in attempts:
         by_arm.setdefault(attempt.arm, []).append(attempt)
 
+    splits = _split_map(split_path)
     per_arm: List[Dict[str, Any]] = []
     for arm_name in sorted(by_arm):
         arm_rows = [r for r in rows if r["arm"] == arm_name]
+        live_arm_rows = [r for r in arm_rows if not is_void(r)]
         summary = summarise_arm(arm_name, by_arm[arm_name])
-        summary["empty_answer_rate"] = round(_empty_rate(arm_rows), 4)
+        summary["voided"] = len(arm_rows) - len(live_arm_rows)
+        summary["empty_answer_rate"] = round(_empty_rate(live_arm_rows), 4)
+        summary["splits"] = _summarise_splits(
+            arm_name, by_arm[arm_name], live_arm_rows, splits
+        )
         summary["verdict"] = verdict_for(summary, summary["empty_answer_rate"], target)
         per_arm.append(summary)
 
@@ -146,27 +206,65 @@ def grade_run(
         run_verdict = "INCONCLUSIVE"
 
     comparison: Dict[str, Any] = {}
-    if len(by_arm) == 2:
+    if len(by_arm) >= 2:
         names = sorted(by_arm)
-        # Pair on the tasks both arms attempted - after voids the arms' live
+        # Pair on the tasks both arms attempted live - after voids the arms' live
         # task sets differ (World 1: A 22, B 13), and an unpaired McNemar is
         # not a comparison. The pairing count is disclosed.
-        a_map = index_by_task(by_arm[names[0]])
-        b_map = index_by_task(by_arm[names[1]])
-        shared = sorted(set(a_map) & set(b_map))
-        a_live = [a_map[task_id] for task_id in shared]
-        b_live = [b_map[task_id] for task_id in shared]
-        result = mcnemar(a_live, b_live)
-        comparison = {
-            "arms": names,
-            "paired_tasks": len(shared),
-            "a_only": result.a_only,
-            "b_only": result.b_only,
-            "both_pass": result.both_pass,
-            "both_fail": result.both_fail,
-            "discordant": result.discordant,
-            "p_value": result.p_value,
-        }
+        pairs: List[Dict[str, Any]] = []
+        for i, first in enumerate(names):
+            for second in names[i + 1 :]:
+                a_map = index_by_task(by_arm[first])
+                b_map = index_by_task(by_arm[second])
+                shared = sorted(set(a_map) & set(b_map))
+                if shared:
+                    a_live = [a_map[task_id] for task_id in shared]
+                    b_live = [b_map[task_id] for task_id in shared]
+                    result = mcnemar(a_live, b_live)
+                    pairs.append(
+                        {
+                            "arms": [first, second],
+                            "paired_tasks": len(shared),
+                            "a_only": result.a_only,
+                            "b_only": result.b_only,
+                            "both_pass": result.both_pass,
+                            "both_fail": result.both_fail,
+                            "discordant": result.discordant,
+                            "p_value": result.p_value,
+                        }
+                    )
+                else:
+                    pairs.append(
+                        {
+                            "arms": [first, second],
+                            "paired_tasks": 0,
+                            "a_only": 0,
+                            "b_only": 0,
+                            "both_pass": 0,
+                            "both_fail": 0,
+                            "discordant": 0,
+                            "p_value": 1.0,
+                        }
+                    )
+
+        if len(names) == 2:
+            primary = pairs[0]
+            comparison = {
+                "arms": names,
+                "paired_tasks": primary["paired_tasks"],
+                "a_only": primary["a_only"],
+                "b_only": primary["b_only"],
+                "both_pass": primary["both_pass"],
+                "both_fail": primary["both_fail"],
+                "discordant": primary["discordant"],
+                "p_value": primary["p_value"],
+                "pairs": pairs,
+            }
+        else:
+            comparison = {
+                "arms": names,
+                "pairs": pairs,
+            }
 
     split_hash = ""
     if split_path and Path(split_path).is_file():
@@ -213,15 +311,39 @@ def grade_run(
 def render(result: Dict[str, Any]) -> str:
     lines = ["", "INDEPENDENT GRADE"]
     for summary in result["arms"]:
+        split_parts: List[str] = []
+        splits = summary.get("splits") or {}
+        if "dev" in splits:
+            d = splits["dev"]
+            split_parts.append(
+                f"dev {d['tasks_passed']}/{d['tasks_scored']} ({d['pass_at_1']:.0%})"
+            )
+        if "test" in splits:
+            t = splits["test"]
+            split_parts.append(
+                f"test {t['tasks_passed']}/{t['tasks_scored']} ({t['pass_at_1']:.0%})"
+            )
+        split_note = f", {', '.join(split_parts)}" if split_parts else ""
+        void_note = f", voided {summary['voided']}" if summary.get("voided") else ""
         lines.append(
             f"  {summary['arm']}: pass@1 {summary['pass_at_1']:.0%} "
             f"(lower bound {summary['pass_at_1_lower_95']:.0%}, "
-            f"empty {summary['empty_answer_rate']:.0%}) -> {summary['verdict']}"
+            f"empty {summary['empty_answer_rate']:.0%}{void_note}{split_note}) "
+            f"-> {summary['verdict']}"
         )
-    if result["comparison"]:
+    comparison = result.get("comparison") or {}
+    pairs = comparison.get("pairs") or []
+    if len(pairs) > 1:
+        for pair in pairs:
+            lines.append(
+                f"  comparison ({' vs '.join(pair['arms'])}): "
+                f"{pair['discordant']} discordant of {pair['paired_tasks']} paired, "
+                f"p = {pair['p_value']:.4f}"
+            )
+    elif comparison:
         lines.append(
-            f"  comparison: {result['comparison']['discordant']} discordant, "
-            f"p = {result['comparison']['p_value']:.4f}"
+            f"  comparison: {comparison['discordant']} discordant, "
+            f"p = {comparison['p_value']:.4f}"
         )
     if result["discrepancies"]:
         lines.append("  RECONCILIATION FAILURES (fatal):")

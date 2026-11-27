@@ -112,6 +112,7 @@ def run_config(
     via_relay: bool = False,
     execute: bool = True,
     freeze_record: Optional[Path] = None,
+    base_url_override: str = "",
 ) -> Dict[str, Any]:
     """Run both arms at one budget under one model route, grade independently,
     receipt everything. Returns the verdict and the artifact paths.
@@ -125,8 +126,10 @@ def run_config(
     providers = load_providers(BENCH_DIR / "spec" / "providers.json")
     if provider not in providers:
         raise BenchmarkError(f"unknown provider {provider!r}: {sorted(providers)}")
-    base_url = providers[provider].base_url
+    base_url = base_url_override or providers[provider].base_url
     client_kwargs: Dict[str, Any] = {}
+    if base_url_override and not via_relay:
+        client_kwargs["base_url"] = base_url_override
     if via_relay:
         with RelayProcess(base_url) as relay_url:
             client_kwargs["base_url"] = relay_url
@@ -181,6 +184,17 @@ def _retry_write(operation: Any, what: str, attempts: int = 5) -> Any:
     raise last_error  # type: ignore[misc]
 
 
+def _description_with_evidence(task: Dict[str, Any]) -> str:
+    """Attach the public evidence filename once without wrapping in _task_prompt."""
+    description = str(task["description"])
+    evidence = task.get("evidence_file")
+    if evidence:
+        marker = f"world_files/{evidence}"
+        if marker not in description:
+            description += f"\n\nYour task's evidence file is {marker}."
+    return description
+
+
 def prompt_for(task: Dict[str, Any], sandbox: Any = None) -> str:
     """The prompt the arm's model actually sees - not a string near it.
 
@@ -197,37 +211,40 @@ def prompt_for(task: Dict[str, Any], sandbox: Any = None) -> str:
     """
     from harness.minimal_arm import _task_prompt
 
-    description = task["description"]
-    evidence = task.get("evidence_file")
-    if evidence:
-        description += f"\n\nYour task's evidence file is world_files/{evidence}."
-    return _task_prompt(description, Path(str(sandbox or "world/world_files")))
+    description = _description_with_evidence(task)
+    return _task_prompt(description, Path(str(sandbox or "world")))
 
 
 def task_for_arm(task: Dict[str, Any]) -> Dict[str, Any]:
-    """The task as the arm receives it: the description the prompt is built
-    from, with the evidence naming included. The manifest is public, so every
-    field of it may reach the model - the withheld parts are gold and rules,
-    not names."""
+    """The task as the arm receives it: the description with evidence naming
+    attached once, WITHOUT pre-wrapping in _task_prompt (which minimal_arm
+    wraps itself - pre-wrapping caused double-wrapped prompts with conflicting
+    working-directory paths)."""
     augmented = dict(task)
-    augmented["description"] = prompt_for(task)
+    augmented["description"] = _description_with_evidence(task)
     return augmented
 
 
 def _sandbox_copy(sandbox: Path) -> Path:
     """A private copy of the agent-visible tree for the run.
 
-    The default --sandbox is the committed world/world_files tree itself.
-    MINIMAL has no SandboxGate and echo/redirection are whitelisted, so an arm
-    write during a run would mutate the FROZEN world mid-run. The freeze's
-    hash would catch it - loudly, after the damage - but the failure mode
-    should not exist: the run works in a copy, the way run_world's engine
-    already does (hypothesis.build_sandbox).
+    Returns the sandbox ROOT containing `world_files/`, matching
+    hypothesis.build_sandbox() so `world_files/<evidence>` resolves directly
+    from cwd without failing on a doubled `world_files/world_files/` path.
     """
     copy = Path(tempfile.mkdtemp(prefix="verdict-run-sandbox-"))
     target = copy / "world_files"
     shutil.copytree(sandbox, target)
-    return target
+    return copy
+
+
+def _split_membership(split_path: Path) -> Dict[str, str]:
+    if not split_path.is_file():
+        return {}
+    split = json.loads(split_path.read_text())
+    membership = {entry["task_id"]: "dev" for entry in split.get("dev", [])}
+    membership.update({entry["task_id"]: "test" for entry in split.get("test", [])})
+    return membership
 
 
 def _run_once(
@@ -275,12 +292,10 @@ def _run_once(
     from world.build_world import generate_tasks
 
     families = {t["task_id"]: t["family"] for t in generate_tasks()}
+    splits = _split_membership(BENCH_DIR / "spec" / "split.json")
     budget = bench.Budget(**spec["budget"])
 
     enforce_world_gates(Path(manifest_path).resolve().parent, sandbox, Path(gold_path))
-    # The run works in a copy of the agent-visible tree: an arm write must not
-    # be able to mutate the frozen world mid-run.
-    run_sandbox = _sandbox_copy(Path(sandbox))
     enforce_freeze(
         BENCH_DIR / "spec" / "split.json",
         record_path=freeze_record or (BENCH_DIR / "spec" / "frozen_run.json"),
@@ -306,31 +321,56 @@ def _run_once(
     rows: List[Dict[str, Any]] = []
     # Rows are written per task, not at the end: a run that is killed mid-way
     # (a timeout, a Ctrl-C) leaves its evidence on disk, the same way the
-    # receipt chain already does.
+    # receipt chain already does. Each arm runs in its OWN fresh sandbox copy so
+    # files written by one arm (e.g. deliverable.json) never leak into or trigger
+    # the leakage guard for the next arm.
     with _retry_write(lambda: rows_path.open("w"), "open rows") as rows_handle:
         for arm_name, entrypoint in spec["arms"].items():
-            runner = resolve_runner(entrypoint)
-            report = run_arm(
-                arm_name,
-                runner,
-                manifest,
-                answers,
-                budget,
-                run_sandbox,
-                lambda task: prompt_for(task, run_sandbox),
-                client,
-            )
+            arm_sandbox = _sandbox_copy(Path(sandbox))
+            try:
+                runner = resolve_runner(entrypoint)
+
+                def _arm_prompt(task: Dict[str, Any]) -> str:
+                    return prompt_for(task, arm_sandbox)
+
+                report = run_arm(
+                    arm_name,
+                    runner,
+                    manifest,
+                    answers,
+                    budget,
+                    arm_sandbox,
+                    _arm_prompt,
+                    client,
+                )
+            finally:
+                shutil.rmtree(arm_sandbox, ignore_errors=True)
             for attempt, grade in zip(report.attempts, report.grades):
+                valid_json = False
+                if attempt.answer:
+                    try:
+                        json.loads(attempt.answer)
+                        valid_json = True
+                    except json.JSONDecodeError:
+                        valid_json = False
                 row = {
                     "arm": arm_name,
                     "task_id": attempt.task_id,
+                    "split": splits.get(attempt.task_id, "unknown"),
                     "stopped_reason": getattr(attempt, "stopped_reason", ""),
+                    "transport_dead": bool(getattr(attempt, "transport_dead", False)),
                     "gate_blocks": getattr(attempt, "gate_blocks", []),
+                    "repairs": getattr(attempt, "repairs", []),
+                    "steps": int(getattr(attempt, "steps", 0)),
+                    "model_calls": int(getattr(attempt, "model_calls", 0)),
+                    "wall_s": round(float(getattr(attempt, "wall_seconds", 0.0)), 3),
+                    "overflowed": bool(getattr(attempt, "overflowed", False)),
                     "family": families.get(attempt.task_id, "unknown"),
                     "rep": 1,
                     "task_pass": grade.passed,
                     "criteria_passed": 1 if grade.passed else 0,
                     "criteria_total": 1,
+                    "valid_json": valid_json,
                     "answer": attempt.answer or "",
                     "answer_empty": not bool(attempt.answer),
                     "model": client.model,
@@ -346,7 +386,6 @@ def _run_once(
                 receipt_task_grade(
                     chain, arm_name, attempt.task_id, grade.passed, grade.reason
                 )
-    shutil.rmtree(run_sandbox.parent, ignore_errors=True)
     verdict = grade_run(rows_path, Path(gold_path), target=target)
     return {
         "status": "ran",
@@ -397,6 +436,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--out", type=Path, default=BENCH_DIR / "results" / "operator")
     parser.add_argument("--target", type=float, default=0.70)
     parser.add_argument("--via-relay", action="store_true")
+    parser.add_argument(
+        "--base-url",
+        default="",
+        help="endpoint override (e.g. http://127.0.0.1:8787/v1 for an active relay)",
+    )
     parser.add_argument("--sweep", default="", help="comma-separated provider:model")
     parser.add_argument("--execute", action="store_true")
     parser.add_argument(
@@ -427,6 +471,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                             via_relay=args.via_relay,
                             execute=True,
                             freeze_record=args.freeze_record,
+                            base_url_override=args.base_url,
                         )
                     )
                 print(json.dumps({"sweep": outcomes}, indent=2))
@@ -445,6 +490,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             via_relay=args.via_relay,
             execute=True,
             freeze_record=args.freeze_record,
+            base_url_override=args.base_url,
         )
         print(json.dumps(outcome, indent=2))
         return 0 if outcome["verdict"] == "PASS" else 1

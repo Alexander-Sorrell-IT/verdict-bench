@@ -20,11 +20,16 @@ from typing import Any, Dict, List, Sequence
 
 DEFAULT_TIMEOUT = 600.0
 DEFAULT_RETRIES = 3
+DEFAULT_MAX_TOKENS = 2048
 RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 
 class ModelError(RuntimeError):
     """Raised when a model call cannot be completed. Never swallowed."""
+
+    def __init__(self, message: str, error_kind: str = "general") -> None:
+        super().__init__(message)
+        self.error_kind = error_kind
 
 
 class ModelCall:
@@ -69,7 +74,9 @@ class ModelClient:
     # ------------------------------------------------------------------ public API
 
     def complete(
-        self, messages: Sequence[Dict[str, str]], max_tokens: int = 500
+        self,
+        messages: Sequence[Dict[str, str]],
+        max_tokens: int = DEFAULT_MAX_TOKENS,
     ) -> str:
         """One chat completion. Returns content, or raises ModelError.
 
@@ -121,11 +128,17 @@ class ModelClient:
                     )
                     raise ModelError(
                         f"model {self.model!r} returned HTTP {response.status_code} "
-                        f"from {self.base_url}"
+                        f"from {self.base_url}",
+                        error_kind="http",
                     )
 
+                try:
+                    output = _extract_content(response)
+                except ModelError as exc:
+                    self.calls.append(ModelCall(elapsed, f"error_{exc.error_kind}"))
+                    raise
                 self.calls.append(ModelCall(elapsed, "ok"))
-                return _extract_content(response)
+                return output
 
             except ModelError:
                 raise
@@ -139,7 +152,8 @@ class ModelClient:
 
         raise ModelError(
             f"model {self.model!r} unreachable after {self.retries} attempts "
-            f"(last: {last_error})"
+            f"(last: {last_error})",
+            error_kind="transport",
         )
 
     # -------------------------------------------------------------- accounting
@@ -170,27 +184,63 @@ class ModelClient:
         }
 
 
+def _extract_tool_call(message: Dict[str, Any]) -> str:
+    """Serialize an OpenAI-style tool_calls entry into JSON so the arm can translate it."""
+    tool_calls = message.get("tool_calls")
+    if not isinstance(tool_calls, list) or not tool_calls:
+        return ""
+    first = tool_calls[0]
+    if not isinstance(first, dict):
+        return ""
+    fn = first.get("function")
+    if not isinstance(fn, dict):
+        return ""
+    name = str(fn.get("name") or "").strip()
+    raw_args = fn.get("arguments", "")
+    parsed_args: Any = raw_args
+    if isinstance(raw_args, str) and raw_args.strip():
+        try:
+            parsed_args = json.loads(raw_args)
+        except json.JSONDecodeError:
+            parsed_args = raw_args
+    if not name and not parsed_args:
+        return ""
+    return json.dumps({"tool": name, "arguments": parsed_args}, sort_keys=True)
+
+
 def _extract_content(response: Any) -> str:
     """Pull content out of an OpenAI-compatible response, or raise.
 
-    An empty completion is a failure, not an empty string to be handed back as an answer.
+    Precedence: content -> reasoning_content -> reasoning -> tool_calls.
+    Reasoning providers (e.g. NVIDIA NIM / Nemotron) emit `reasoning_content`
+    when the reasoning budget consumes the reply and leaves `content` null.
+    An empty completion is still a failure, never a synthesized string.
     """
     try:
         payload = response.json()
     except json.JSONDecodeError as exc:
-        raise ModelError(f"model response was not JSON: {exc}") from exc
+        raise ModelError(
+            f"model response was not JSON: {exc}", error_kind="invalid_json"
+        ) from exc
 
     choices = payload.get("choices")
     if not isinstance(choices, list) or not choices:
-        raise ModelError(f"model response had no choices: {_shape(payload)}")
+        raise ModelError(
+            f"model response had no choices: {_shape(payload)}",
+            error_kind="empty_completion",
+        )
 
     message = choices[0].get("message") or {}
     content = (message.get("content") or "").strip()
+    reasoning_content = (message.get("reasoning_content") or "").strip()
     reasoning = (message.get("reasoning") or "").strip()
-    output = content or reasoning
+    tool_call = _extract_tool_call(message)
+    output = content or reasoning_content or reasoning or tool_call
     if not output:
         raise ModelError(
-            "model returned an empty completion (content and reasoning both blank)"
+            "model returned an empty completion "
+            "(content, reasoning_content, reasoning, and tool_calls all blank)",
+            error_kind="empty_completion",
         )
     return output
 

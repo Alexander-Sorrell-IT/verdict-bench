@@ -42,17 +42,41 @@ VOIDABLE_RC = (124,)
 VOID_REASONS: Dict[int, str] = {
     124: "timeout: killed by the wall clock - the attempt was not graded on its merits",
 }
+TRANSPORT_VOID_REASON = (
+    "transport: upstream/relay unreachable with no model response - "
+    "the attempt was not graded on its merits"
+)
+
+
+def _is_transport_dead_empty(record: Dict[str, Any]) -> bool:
+    """An empty attempt caused by a transport/upstream outage (no model response)."""
+    empty = record.get("answer_empty")
+    if empty is None:
+        empty = not bool(record.get("answer"))
+    if not empty:
+        return False
+    if record.get("transport_dead") is True:
+        return True
+    stopped = str(record.get("stopped_reason", "")).lower()
+    return stopped.startswith("transport_error")
 
 
 def is_void(record: Dict[str, Any]) -> bool:
-    """One predicate, one policy: a record whose rc says it never completed."""
-    return record.get("rc") in VOIDABLE_RC
+    """One predicate, one policy: wall-clock timeouts or transport-dead empties."""
+    return record.get("rc") in VOIDABLE_RC or _is_transport_dead_empty(record)
 
 
 def void_reason(record: Dict[str, Any]) -> str:
     rc = record.get("rc")
     if isinstance(rc, int) and rc in VOID_REASONS:
         return VOID_REASONS[rc]
+    if _is_transport_dead_empty(record):
+        stopped = str(record.get("stopped_reason", "")).strip()
+        return (
+            f"{TRANSPORT_VOID_REASON} ({stopped})"
+            if stopped
+            else TRANSPORT_VOID_REASON
+        )
     return f"voided: rc={rc}"
 
 

@@ -19,3 +19,4 @@ keys.toml
 secrets/
 
 keys.json
+logs/

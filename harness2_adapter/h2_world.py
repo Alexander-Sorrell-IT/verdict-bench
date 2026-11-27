@@ -22,7 +22,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-BENCH_DIR = Path(__file__).resolve().parent.parent.parent
+BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BENCH_DIR))
 sys.path.insert(0, str(BENCH_DIR / "runner"))
 sys.path.insert(0, str(BENCH_DIR / "world"))

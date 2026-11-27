@@ -23,7 +23,7 @@ import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from world.paths import (  # noqa: E402
@@ -208,6 +208,13 @@ def _create_world_files(world: Dict[str, Any], seed: int) -> None:
                 (FILES_DIR / f"{task_id}.env").write_text(f"{var}={val}\n")
 
 
+def generate_tasks(seed: int = 20261120, num_tasks: int = 25) -> List[Dict[str, Any]]:
+    """The task list, pure: no files written, nothing sampled. Deterministic for
+    a (seed, num_tasks) pair, which is what makes the split in runner/split.py
+    and the freeze hash reproducible."""
+    return [generate_task(i, seed) for i in range(num_tasks)]
+
+
 def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
     """Build the complete world."""
     world: Dict[str, Any] = {
@@ -216,12 +223,8 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
         "num_tasks": num_tasks,
         "families": TASK_FAMILIES,
         "created_at": datetime.now(timezone.utc).isoformat() + "Z",
-        "tasks": [],
+        "tasks": generate_tasks(seed=seed, num_tasks=num_tasks),
     }
-
-    for i in range(num_tasks):
-        task = generate_task(i, seed)
-        world["tasks"].append(task)
 
     # Create the actual files so agents can find them
     _create_world_files(world, seed)

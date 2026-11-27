@@ -1,0 +1,110 @@
+{
+  "rule": "per family, tasks sorted by sha256(task_id); first 3 = dev, remainder = test",
+  "world_id": "world2-20261120",
+  "seed": 20261120,
+  "num_tasks": 25,
+  "dev": [
+    {
+      "task_id": "W2-000",
+      "domain": "config-parsing"
+    },
+    {
+      "task_id": "W2-002",
+      "domain": "file-hash-verification"
+    },
+    {
+      "task_id": "W2-003",
+      "domain": "command-output-transformation"
+    },
+    {
+      "task_id": "W2-005",
+      "domain": "config-parsing"
+    },
+    {
+      "task_id": "W2-006",
+      "domain": "log-pattern-detection"
+    },
+    {
+      "task_id": "W2-007",
+      "domain": "file-hash-verification"
+    },
+    {
+      "task_id": "W2-009",
+      "domain": "environment-variable-resolution"
+    },
+    {
+      "task_id": "W2-010",
+      "domain": "config-parsing"
+    },
+    {
+      "task_id": "W2-011",
+      "domain": "log-pattern-detection"
+    },
+    {
+      "task_id": "W2-012",
+      "domain": "file-hash-verification"
+    },
+    {
+      "task_id": "W2-013",
+      "domain": "command-output-transformation"
+    },
+    {
+      "task_id": "W2-019",
+      "domain": "environment-variable-resolution"
+    },
+    {
+      "task_id": "W2-021",
+      "domain": "log-pattern-detection"
+    },
+    {
+      "task_id": "W2-023",
+      "domain": "command-output-transformation"
+    },
+    {
+      "task_id": "W2-024",
+      "domain": "environment-variable-resolution"
+    }
+  ],
+  "test": [
+    {
+      "task_id": "W2-001",
+      "domain": "log-pattern-detection"
+    },
+    {
+      "task_id": "W2-004",
+      "domain": "environment-variable-resolution"
+    },
+    {
+      "task_id": "W2-008",
+      "domain": "command-output-transformation"
+    },
+    {
+      "task_id": "W2-014",
+      "domain": "environment-variable-resolution"
+    },
+    {
+      "task_id": "W2-015",
+      "domain": "config-parsing"
+    },
+    {
+      "task_id": "W2-016",
+      "domain": "log-pattern-detection"
+    },
+    {
+      "task_id": "W2-017",
+      "domain": "file-hash-verification"
+    },
+    {
+      "task_id": "W2-018",
+      "domain": "command-output-transformation"
+    },
+    {
+      "task_id": "W2-020",
+      "domain": "config-parsing"
+    },
+    {
+      "task_id": "W2-022",
+      "domain": "file-hash-verification"
+    }
+  ]
+}

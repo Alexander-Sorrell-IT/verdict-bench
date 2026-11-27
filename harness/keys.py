@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # verdict-bench runner/keys.py
 #
-# API-key resolution, shaped to match OmniCLI so existing provider configs and keys are
-# reused rather than duplicated. OmniCLI's ConfigManager.get_api_key order:
+# API-key resolution. verdict-bench is STANDALONE: it carries its own provider
+# registry (spec/providers.json) and its own resolution order, and it needs no
+# other tool installed to run. The order:
 #
 #     1. the provider's env_key in the process environment
 #     2. any of its alt_env_keys
-#     3. a keys file (OMNICLI_KEYS_FILE / a verdict-bench equivalent)
+#     3. a keys file (VERDICT_BENCH_KEYS_FILE, or spec/keys.json)
 #     4. nothing - and it raises rather than inventing a key
 #
-# Field names mirror OmniCLI's provider entries so ~/.config/omnicli/config.json loads
-# unmodified: name, base_url, base_url_template, env_key, alt_env_keys, default_model,
-# description, requires_auth_for_models, fallback_models.
+# Provider fields are the plain OpenAI-compatible shape: name, base_url,
+# base_url_template, env_key, alt_env_keys, default_model, description,
+# requires_auth_for_models, fallback_models. ANY registry with that shape loads
+# - point --providers at it, or export VERDICT_BENCH_PROVIDERS.
 #
 # No key is ever written to a config, a results file, or a receipt row.
 
@@ -22,17 +24,14 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Config discovery, same order OmniCLI uses.
+# Config discovery: an explicit path, then VERDICT_BENCH_PROVIDERS, then the
+# registry this repo ships.
 CONFIG_ENV = "VERDICT_BENCH_PROVIDERS"
-OMNICLI_CONFIG_ENV = "OMNICLI_CONFIG_DIR"
-KEYS_FILE_ENV_VARIANTS = (
-    "VERDICT_BENCH_KEYS_FILE",
-    "OMNICLI_KEYS_FILE",
-    "TRIO_KEYS_FILE",
-)
+KEYS_FILE_ENV = "VERDICT_BENCH_KEYS_FILE"
 
 BENCH_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_PROVIDERS = BENCH_DIR / "spec" / "providers.json"
+DEFAULT_KEYS_FILE = BENCH_DIR / "spec" / "keys.json"
 
 
 class KeyError_(RuntimeError):
@@ -40,7 +39,7 @@ class KeyError_(RuntimeError):
 
 
 class Provider:
-    """One OpenAI-compatible endpoint, described the way OmniCLI describes them."""
+    """One OpenAI-compatible endpoint, in this repo's registry shape."""
 
     def __init__(self, provider_id: str, spec: Dict[str, Any]) -> None:
         self.id = provider_id
@@ -75,10 +74,10 @@ class Provider:
 
 
 def load_providers(path: Optional[Path] = None) -> Dict[str, Provider]:
-    """Load providers from verdict-bench's spec or from an OmniCLI config.
+    """Load providers from any JSON file with a "providers" block.
 
-    Accepts either file: OmniCLI's `providers` block has the same shape this reads, so
-    ~/.config/omnicli/config.json works without translation.
+    verdict-bench's own spec/providers.json by default; VERDICT_BENCH_PROVIDERS
+    or an explicit path to point at your own registry.
     """
     config_path = _config_path(path)
     try:
@@ -98,35 +97,36 @@ def _config_path(path: Optional[Path]) -> Path:
     explicit = os.environ.get(CONFIG_ENV, "").strip()
     if explicit:
         return Path(explicit)
-    omnicli_dir = os.environ.get(OMNICLI_CONFIG_ENV, "").strip()
-    if omnicli_dir:
-        candidate = Path(omnicli_dir) / "config.json"
-        if candidate.exists():
-            return candidate
     if DEFAULT_PROVIDERS.exists():
         return DEFAULT_PROVIDERS
     raise KeyError_(
-        "no provider config found: set VERDICT_BENCH_PROVIDERS, or OMNICLI_CONFIG_DIR, "
+        "no provider config found: set VERDICT_BENCH_PROVIDERS, pass a path, "
         f"or ship {DEFAULT_PROVIDERS}"
     )
 
 
 def _keys_file() -> Optional[Path]:
-    for var in KEYS_FILE_ENV_VARIANTS:
-        value = os.environ.get(var, "").strip()
-        if value:
-            candidate = Path(value)
-            if candidate.exists():
-                return candidate
-    return None
+    value = os.environ.get(KEYS_FILE_ENV, "").strip()
+    if value:
+        candidate = Path(value)
+        if candidate.exists():
+            return candidate
+    return DEFAULT_KEYS_FILE if DEFAULT_KEYS_FILE.exists() else None
 
 
-def resolve_api_key(provider: Provider) -> str:
-    """Resolve a key in OmniCLI's order: env_key, alt_env_keys, keys file, then fail.
+def resolve_api_key(provider: Provider, key_env: str = "") -> str:
+    """Resolve a key: an explicit env var, then the provider's env_key, its
+    alt_env_keys, a keys file - then fail.
 
-    A missing key is an error, not a default. "host" or "ollama" style placeholders are
-    how a run quietly sends the wrong credential.
+    A missing key is an error, not a default. Placeholder credentials are how a
+    run quietly sends the wrong key. key_env lets an operator point at their
+    own variable name: --key-env MY_PROVIDER_KEY.
     """
+    if key_env:
+        value = os.environ.get(key_env, "").strip()
+        if not value:
+            raise KeyError_(f"no key in ${key_env}: the env var you named is empty")
+        return value
     for var in [provider.env_key, *provider.alt_env_keys]:
         if not var:
             continue
@@ -156,8 +156,7 @@ def resolve_api_key(provider: Provider) -> str:
 def needs_key(provider: Provider) -> bool:
     """Does this provider actually require authentication?
 
-    Local endpoints (127.0.0.1 / localhost) do not, and must not be sent a key: OmniCLI's
-    own default base_url is 127.0.0.1, not localhost, so hostname matching alone is wrong.
+    Local endpoints (127.0.0.1 / localhost) do not, and must not be sent a key.
     """
     if not provider.env_key:
         return False

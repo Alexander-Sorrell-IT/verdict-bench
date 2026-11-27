@@ -95,20 +95,37 @@ def local_client() -> ModelClient:
     )
 
 
-def relay_client() -> ModelClient:
-    """The graded route: the shared relay's default provider and model."""
-    providers_path = BENCH_DIR / "spec" / "providers.json"
+def relay_client(
+    provider_id: str = "",
+    model: str = "",
+    key_env: str = "",
+    base_url: str = "",
+    providers_path: Optional[Path] = None,
+) -> ModelClient:
+    """The client: any OpenAI-compatible provider and model from the registry.
+
+    verdict-bench needs nothing else installed - point --provider/--model (and
+    --key-env if your key sits in a differently-named variable) at whatever
+    endpoint and credential you run. No arguments means the registry default.
+    """
+    providers_path = providers_path or BENCH_DIR / "spec" / "providers.json"
     providers = load_providers(providers_path)
-    provider_id = default_provider_id(providers_path)
-    if not provider_id or provider_id not in providers:
-        raise ModelError(f"no default provider in {providers_path}")
-    provider = providers[provider_id]
-    if not provider.default_model:
-        raise ModelError(f"provider {provider_id!r} names no default model")
+    resolved_provider = provider_id or default_provider_id(providers_path) or ""
+    if not resolved_provider or resolved_provider not in providers:
+        raise ModelError(
+            f"no provider {provider_id!r} in {providers_path}: "
+            f"known providers are {sorted(providers)}"
+        )
+    provider = providers[resolved_provider]
+    model_id = model or provider.default_model
+    if not model_id:
+        raise ModelError(
+            f"provider {resolved_provider!r} names no default model: pass --model"
+        )
     return ModelClient(
-        base_url=provider.base_url,
-        api_key=resolve_api_key(provider),
-        model=provider.default_model,
+        base_url=base_url or provider.resolve_base_url(),
+        api_key=resolve_api_key(provider, key_env),
+        model=model_id,
     )
 
 

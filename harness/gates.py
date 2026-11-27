@@ -107,8 +107,8 @@ class Gate:
 class CompletionGate(Gate):
     """The run may not end until the deliverable exists.
 
-    This is the AF2 gate that took OmniCLI from 72% to a clean pass rate, and it is the
-    one whose absence manufactured the 25/25: a placeholder string satisfies
+    This is the AF2 gate whose absence manufactured the 25/25: a placeholder
+    string satisfies
     "non-empty and parses", but it does not satisfy "the file the task asked for exists".
     """
 

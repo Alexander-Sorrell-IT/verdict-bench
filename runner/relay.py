@@ -13,7 +13,7 @@
 #   * one log line per call - run evidence, never the key.
 #
 # Rewritten glue: the key never lives in this repo. It resolves from the
-# environment through harness/keys.py (OmniCLI's precedence), or from an
+# environment through harness/keys.py (verdict-bench's own resolution), or from an
 # operator-side --key-file; the relay is the ONLY place the real key exists,
 # so arms point at it with a placeholder and the key never reaches an arm.
 # LOCAL ONLY: binds 127.0.0.1 unless told otherwise.

@@ -1,5 +1,5 @@
 {
-  "_comment": "Provider registry in OmniCLI's field shape: env_key, alt_env_keys, base_url, base_url_template, default_model, requires_auth_for_models, fallback_models. That shape is deliberate - an OmniCLI config.json (OMNICLI_CONFIG_DIR) loads unmodified, so existing providers and keys are reused rather than duplicated. Keys never live in this file. No key is ever written to a config, a results file, or a receipt row.",
+  "_comment": "verdict-bench's OWN provider registry - this repo is standalone and installs nothing else. Shape is the plain OpenAI-compatible one: base_url, env_key, alt_env_keys, default_model, requires_auth_for_models, fallback_models. Point --providers at any file with that shape to use your own. Keys NEVER live in this file and are never written to a config, a results file, or a receipt row - they resolve from the environment (the provider's env_key, or --key-env for your own variable name).",
   "default_provider": "nvidia",
   "providers": {
     "nvidia": {

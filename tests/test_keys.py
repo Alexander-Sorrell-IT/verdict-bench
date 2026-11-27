@@ -1,4 +1,6 @@
-"""API-key resolution — OmniCLI's precedence order, and loud failure instead of a default."""
+"""API-key resolution — this repo's own precedence, any provider, and loud
+failure instead of a default. verdict-bench is standalone: no other tool needs
+to be installed for a key to resolve."""
 
 import json
 import sys
@@ -23,9 +25,6 @@ def clean_env(monkeypatch):
         "GEMINI_API_KEY",
         "VERDICT_BENCH_PROVIDERS",
         "VERDICT_BENCH_KEYS_FILE",
-        "OMNICLI_KEYS_FILE",
-        "TRIO_KEYS_FILE",
-        "OMNICLI_CONFIG_DIR",
     ):
         monkeypatch.delenv(var, raising=False)
     yield
@@ -57,7 +56,7 @@ def test_env_key_wins_over_alt_and_file(tmp_path, monkeypatch):
     monkeypatch.setenv("VERDICT_BENCH_KEYS_FILE", str(tmp_path / "keys.json"))
 
     providers = keys.load_providers(path)
-    # whitespace stripped, env first - OmniCLI's exact order
+    # whitespace stripped, env first - this repo's order
     assert keys.resolve_api_key(providers["nvidia"]) == "primary-key"
 
 
@@ -134,9 +133,10 @@ def test_hosted_provider_needs_a_key(tmp_path):
     assert keys.needs_key(keys.load_providers(path)["nvidia"]) is True
 
 
-def test_omnicli_shaped_config_loads_unchanged(tmp_path):
-    """An OmniCLI config.json is readable as-is - no translation layer."""
-    omnicli = {
+def test_any_openai_compatible_registry_loads_unchanged(tmp_path):
+    """Any provider registry with the plain shape loads as-is: your own file,
+    your own endpoints, no translation layer and no dependency on this repo's."""
+    registry = {
         "default_provider": "groq",
         "providers": {
             "nvidia": {
@@ -153,8 +153,8 @@ def test_omnicli_shaped_config_loads_unchanged(tmp_path):
             },
         },
     }
-    path = tmp_path / "omnicli-config.json"
-    path.write_text(json.dumps(omnicli))
+    path = tmp_path / "my-registry.json"
+    path.write_text(json.dumps(registry))
     loaded = keys.load_providers(path)
     assert set(loaded) == {"nvidia", "cloudflare"}
     assert loaded["nvidia"].alt_env_keys == ["NVAPI_KEY"]

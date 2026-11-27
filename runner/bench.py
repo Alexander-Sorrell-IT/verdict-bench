@@ -10,7 +10,7 @@
 #                       its sandbox contains gold-derived data.
 #
 # Arms are IN-REPO callables (harness/*.py). The benchmark does not shell out to an
-# external agent harness - that was the OmniCLI submodule mistake: "as shipped" meant a
+# external agent harness - a submodule shipped dirty once: "as shipped" meant a
 # dirty working tree no clone could reproduce.
 #
 # Verdict rule (Manta Fusion spec): promotion only on independently verified transfer.
@@ -566,6 +566,7 @@ def build_client(
     provider_id: Optional[str] = None,
     model: str = "",
     base_url: str = "",
+    key_env: str = "",
 ) -> ModelClient:
     """One client for every arm: one endpoint, one model, one key resolution.
 
@@ -584,7 +585,7 @@ def build_client(
     endpoint = base_url or provider.base_url
     if not endpoint:
         raise BenchmarkError(f"provider {provider_id!r} names no base_url")
-    api_key = resolve_api_key(provider)
+    api_key = resolve_api_key(provider, key_env)
     model_id = model or provider.default_model
     if not model_id:
         raise BenchmarkError(
@@ -627,6 +628,27 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=BENCH_DIR / "results")
     parser.add_argument(
         "--target", type=float, default=0.70, help="pass@1 target for a PASS verdict"
+    )
+    # The model route. Any OpenAI-compatible provider and any model, keyed from
+    # the environment - verdict-bench needs nothing else installed.
+    parser.add_argument(
+        "--provider",
+        default="",
+        help="provider id from the registry (default: the registry's default)",
+    )
+    parser.add_argument(
+        "--model", default="", help="model id (default: the provider's default)"
+    )
+    parser.add_argument(
+        "--key-env",
+        default="",
+        help="env var holding the key (default: the provider's env_key)",
+    )
+    parser.add_argument(
+        "--base-url", default="", help="endpoint override (default: the provider's)"
+    )
+    parser.add_argument(
+        "--providers", type=Path, default=None, help="your own provider registry"
     )
     args = parser.parse_args()
 
@@ -676,8 +698,14 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     # ONE client for every arm, built once: same endpoint, same model, same key
     # resolution. An arm never constructs its own client.
+    registry = args.providers or BENCH_DIR / "spec" / "providers.json"
     try:
-        client = build_client(BENCH_DIR / "spec" / "providers.json")
+        client_kwargs: Dict[str, Any] = {}
+        if args.base_url:
+            client_kwargs["base_url"] = args.base_url
+        client = build_client(
+            registry, args.provider, args.model, key_env=args.key_env, **client_kwargs
+        )
     except (
         Exception
     ) as exc:  # noqa: BLE001 - any key/env failure aborts the run, loudly

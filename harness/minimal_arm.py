@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # verdict-bench harness/minimal_arm.py
 #
-# The in-repo arm. Replaces shelling out to an external harness, because "OmniCLI as
+# The in-repo arm. Replaces shelling out to an external harness, because a submodule
 # shipped" turned out to mean a dirty submodule working tree that no clone could reproduce.
 #
 # Loop: propose -> gate -> execute -> gate -> evaluate -> stop, until an answer parses,

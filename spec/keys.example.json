@@ -1,5 +1,5 @@
 {
-  "_comment": "Keys FILE example - copy to keys.json (gitignored). The env var path is preferred; this file is the fallback when a key cannot be exported. Resolution order is OmniCLI's: env_key -> alt_env_keys -> this file -> error. No key is ever written to a config, a results file, or a receipt row.",
+  "_comment": "Keys FILE example - copy to spec/keys.json (gitignored), or point VERDICT_BENCH_KEYS_FILE at your own. The env var path is preferred; this file is the fallback when a key cannot be exported. Resolution order is this repo's own: --key-env / env_key -> alt_env_keys -> this file -> loud error. No key is ever written to a config, a results file, or a receipt row.",
   "nvidia": "nvapi-...",
   "openrouter": "sk-or-...",
   "groq": "gsk_...",

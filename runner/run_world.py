@@ -326,6 +326,22 @@ def main() -> None:
         "(the recovery measurement; omit for the clean control run)",
     )
     parser.add_argument(
+        "--provider",
+        default="",
+        help="provider id from spec/providers.json (default: the registry's)",
+    )
+    parser.add_argument(
+        "--model", default="", help="model id (default: the provider's default)"
+    )
+    parser.add_argument(
+        "--key-env",
+        default="",
+        help="env var holding the key (default: the provider's env_key)",
+    )
+    parser.add_argument(
+        "--providers", default=None, help="your own provider registry JSON"
+    )
+    parser.add_argument(
         "--build-world", action="store_true", help="Build the world before running"
     )
     parser.add_argument("--seed", type=int, default=20261120, help="World seed")
@@ -374,7 +390,16 @@ def main() -> None:
     # structural); the only difference between arms is the arm itself. ONE
     # client for every arm: the graded relay route unless --local is debugging.
     split = _load_split(Path(args.spec_split))
-    client = local_client() if args.local else relay_client()
+    client = (
+        local_client()
+        if args.local
+        else relay_client(
+            provider_id=args.provider,
+            model=args.model,
+            key_env=args.key_env,
+            providers_path=Path(args.providers) if args.providers else None,
+        )
+    )
     adversary = Adversary(args.adversary_seed) if args.adversary_seed else None
     print(
         f"Model route: {client.model} via {client.base_url}"

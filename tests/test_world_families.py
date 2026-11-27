@@ -67,3 +67,19 @@ def test_the_agent_visible_data_names_no_family():
         text = path.read_text(errors="replace")
         hits = [f for f in TASK_FAMILIES if f in text]
         assert not hits, f"{path.name} contains family names: {hits}"
+
+
+def test_the_manifest_names_each_tasks_evidence_file():
+    """The plan's design, and the answer to the live run that catted the first
+    file of the right shape: the manifest names THIS task's evidence, so file
+    selection is not a coin flip."""
+    import json
+
+    from world.paths import MANIFEST_PATH
+
+    manifest = json.loads(MANIFEST_PATH.read_text())
+    for task in manifest["tasks"]:
+        named = task.get("evidence_file")
+        assert named, f"{task['task_id']} has no evidence_file"
+        assert named.startswith(f"{task['task_id']}.")
+        assert (FILES_DIR / named).is_file(), f"{named} is not in world_files"

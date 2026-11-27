@@ -6,103 +6,128 @@
   "tasks": [
     {
       "task_id": "W2-000",
-      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
+      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}.",
+      "evidence_file": "W2-000.conf"
     },
     {
       "task_id": "W2-001",
-      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
+      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}.",
+      "evidence_file": "W2-001.log"
     },
     {
       "task_id": "W2-002",
-      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}.",
+      "evidence_file": "W2-002.bin"
     },
     {
       "task_id": "W2-003",
-      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}.",
+      "evidence_file": "W2-003.sh"
     },
     {
       "task_id": "W2-004",
-      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
+      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}.",
+      "evidence_file": "W2-004.env"
     },
     {
       "task_id": "W2-005",
-      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
+      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}.",
+      "evidence_file": "W2-005.conf"
     },
     {
       "task_id": "W2-006",
-      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
+      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}.",
+      "evidence_file": "W2-006.log"
     },
     {
       "task_id": "W2-007",
-      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}.",
+      "evidence_file": "W2-007.bin"
     },
     {
       "task_id": "W2-008",
-      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}.",
+      "evidence_file": "W2-008.sh"
     },
     {
       "task_id": "W2-009",
-      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
+      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}.",
+      "evidence_file": "W2-009.env"
     },
     {
       "task_id": "W2-010",
-      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
+      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}.",
+      "evidence_file": "W2-010.conf"
     },
     {
       "task_id": "W2-011",
-      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
+      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}.",
+      "evidence_file": "W2-011.log"
     },
     {
       "task_id": "W2-012",
-      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}.",
+      "evidence_file": "W2-012.bin"
     },
     {
       "task_id": "W2-013",
-      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}.",
+      "evidence_file": "W2-013.sh"
     },
     {
       "task_id": "W2-014",
-      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
+      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}.",
+      "evidence_file": "W2-014.env"
     },
     {
       "task_id": "W2-015",
-      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
+      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}.",
+      "evidence_file": "W2-015.conf"
     },
     {
       "task_id": "W2-016",
-      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
+      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}.",
+      "evidence_file": "W2-016.log"
     },
     {
       "task_id": "W2-017",
-      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}.",
+      "evidence_file": "W2-017.bin"
     },
     {
       "task_id": "W2-018",
-      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}.",
+      "evidence_file": "W2-018.sh"
     },
     {
       "task_id": "W2-019",
-      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
+      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}.",
+      "evidence_file": "W2-019.env"
     },
     {
       "task_id": "W2-020",
-      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}."
+      "description": "There is a configuration file somewhere in the world_files directory. Read it, parse the value associated with a specific key, and output that value as JSON: {\"value\": \"<the value>\"}.",
+      "evidence_file": "W2-020.conf"
     },
     {
       "task_id": "W2-021",
-      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}."
+      "description": "A log file exists somewhere in world_files. Search it for lines matching a specific pattern, count the matches, and output the count as JSON: {\"count\": <number>}.",
+      "evidence_file": "W2-021.log"
     },
     {
       "task_id": "W2-022",
-      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}."
+      "description": "Compute the SHA-256 hash of a specific file in world_files. Output the hash as JSON: {\"hash\": \"<hex string>\"}.",
+      "evidence_file": "W2-022.bin"
     },
     {
       "task_id": "W2-023",
-      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}."
+      "description": "Run a command, transform its output to uppercase, and output the result as JSON: {\"transformed\": \"<UPPERCASE>\"}.",
+      "evidence_file": "W2-023.sh"
     },
     {
       "task_id": "W2-024",
-      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}."
+      "description": "Read an environment variable, reverse its value, and output the result as JSON: {\"result\": \"<reversed>\"}.",
+      "evidence_file": "W2-024.env"
     }
   ]
 }

@@ -43,6 +43,27 @@ TASK_FAMILIES = [
     "environment-variable-resolution",
 ]
 
+# The evidence-file extension per family. ONE mapping: the manifest's
+# evidence_file field and the files _create_world_files writes both derive from
+# it, so they cannot drift apart.
+FAMILY_EXTENSIONS = {
+    "config-parsing": ".conf",
+    "log-pattern-detection": ".log",
+    "file-hash-verification": ".bin",
+    "command-output-transformation": ".sh",
+    "environment-variable-resolution": ".env",
+}
+
+
+def evidence_name(task_id: str, family: str) -> str:
+    """The name of a task's evidence file: named for its task_id (public, so the
+    arm can correlate its task with its file by listing the directory - no
+    positional luck) and shaped by family (one mapping, used by both sides)."""
+    extension = FAMILY_EXTENSIONS.get(family)
+    if not extension:
+        raise ValueError(f"no evidence extension for family {family!r}")
+    return f"{task_id}{extension}"
+
 
 def _hash_seed(seed: int, task_idx: int) -> str:
     h = hashlib.sha256(f"{seed}-{task_idx}".encode()).hexdigest()
@@ -175,12 +196,13 @@ def _create_world_files(world: Dict[str, Any], seed: int) -> None:
         rules = task.get("hidden_rules", {})
         family = task["family"]
         task_id = task["task_id"]
+        path = FILES_DIR / evidence_name(task_id, family)
 
         if family == "config-parsing":
             key = rules.get("key_name", "")
             value = rules.get("expected_value", "")
             if key and value:
-                (FILES_DIR / f"{task_id}.conf").write_text(f"{key} = {value}\n")
+                path.write_text(f"{key} = {value}\n")
 
         elif family == "log-pattern-detection":
             pattern = rules.get("pattern", "")
@@ -189,23 +211,22 @@ def _create_world_files(world: Dict[str, Any], seed: int) -> None:
                 lines = [f"{pattern}: error message {i}" for i in range(count)]
                 lines.append("INFO: normal operation")
                 lines.append("WARNING: something minor")
-                (FILES_DIR / f"{task_id}.log").write_text("\n".join(lines) + "\n")
+                path.write_text("\n".join(lines) + "\n")
 
         elif family == "file-hash-verification":
-            (FILES_DIR / f"{task_id}.bin").write_bytes(b"hidden_file_content")
+            path.write_bytes(b"hidden_file_content")
 
         elif family == "command-output-transformation":
             cmd = rules.get("command", [])
             payload = cmd[1] if len(cmd) > 1 else ""
             if payload:
-                script = f"#!/bin/sh\necho {payload}\n"
-                (FILES_DIR / f"{task_id}.sh").write_text(script)
+                path.write_text(f"#!/bin/sh\necho {payload}\n")
 
         elif family == "environment-variable-resolution":
             var = rules.get("env_var", "")
             val = rules.get("env_value", "")
             if var and val:
-                (FILES_DIR / f"{task_id}.env").write_text(f"{var}={val}\n")
+                path.write_text(f"{var}={val}\n")
 
 
 def _world_timestamp(seed: int) -> str:
@@ -266,6 +287,10 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
             {
                 "task_id": t["task_id"],
                 "description": t["description"],
+                # The arm's task, named: which file in world_files is THIS
+                # task's evidence. Without it a live run picked the first file
+                # of the shape - selection noise masquerading as capability.
+                "evidence_file": evidence_name(t["task_id"], t["family"]),
             }
             for t in world["tasks"]
         ],

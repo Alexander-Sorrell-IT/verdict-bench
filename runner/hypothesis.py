@@ -359,8 +359,8 @@ def _evaluate_prompt(task_description: str, cmd: str, result: Dict[str, Any]) ->
             f"STDERR: {result['stderr'][:500]}",
             "",
             "Respond with EXACTLY one line:",
-            '  ANSWER: {"<key>": "<the value you found>"}   if the output contains '
-            "the answer",
+            "  ANSWER: <the JSON object in exactly the shape the task "
+            "description asks for>   if the output contains the answer",
             "  COMMAND: <shell command>                     if you need another "
             "command",
             "",

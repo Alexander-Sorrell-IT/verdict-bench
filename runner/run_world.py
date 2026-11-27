@@ -126,6 +126,12 @@ def run_arm(
         task_id = task["task_id"]
         family = families.get(task_id, task.get("family", "unknown"))
         description = task["description"]
+        evidence = task.get("evidence_file")
+        if evidence:
+            # The manifest names the task's evidence file (the plan's design,
+            # and the fix for the live run that catted the first file of the
+            # right SHAPE): selection must not be a coin flip.
+            description += f"\n\nYour task's evidence file is world_files/{evidence}."
         split_member = membership.get(task_id)
 
         if only_split and split_member != only_split:

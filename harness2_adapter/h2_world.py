@@ -27,6 +27,7 @@ sys.path.insert(0, str(BENCH_DIR))
 sys.path.insert(0, str(BENCH_DIR / "runner"))
 sys.path.insert(0, str(BENCH_DIR / "world"))
 
+from freeze import FreezeError, enforce_freeze  # noqa: E402
 from hypothesis import (  # noqa: E402
     SYSTEM_PROMPT,
     build_sandbox,
@@ -34,6 +35,13 @@ from hypothesis import (  # noqa: E402
     extract_command,
     execute_command,
     relay_client,
+)
+from operator_mode import task_for_arm  # noqa: E402
+from receipts import (  # noqa: E402
+    ReceiptChain,
+    receipt_run_manifest,
+    receipt_task_grade,
+    verify_receipt_chain,
 )
 from world.grader import grade_task_output  # noqa: E402
 from world.paths import GOLD_PATH, MANIFEST_PATH  # noqa: E402
@@ -215,11 +223,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # The same fixed path as the bench arms: frozen world, evidence naming in
+    # the task the arm receives, rows and grades on a receipt chain.
+    try:
+        enforce_freeze(BENCH_DIR / "spec" / "split.json")
+    except FreezeError as exc:
+        print(f"RUN REFUSED: {exc}", file=sys.stderr)
+        return 1
+
     manifest = json.loads(MANIFEST_PATH.read_text())
     families = _task_families()
     by_family: Dict[str, List[Dict[str, Any]]] = {}
     for task in manifest["tasks"]:
-        task = dict(task)
+        task = task_for_arm(task)
         task["family"] = families.get(task["task_id"], "unknown")
         by_family.setdefault(task["family"], []).append(task)
 
@@ -227,6 +243,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         provider_id=args.provider, model=args.model, key_env=args.key_env
     )
     args.out.mkdir(parents=True, exist_ok=True)
+    chain = ReceiptChain(args.out / "receipts.json")
+    receipt_run_manifest(
+        chain,
+        {
+            "kind_detail": "h2_world",
+            "provider": args.provider or "default",
+            "model": client.model,
+            "base_url": client.base_url,
+            "probes": str(args.probes),
+        },
+    )
     rows: List[Dict[str, Any]] = []
     sandbox = build_sandbox()
     started = time.time()
@@ -245,23 +272,33 @@ def main(argv: Optional[List[str]] = None) -> int:
                     f"({client.manifest_fields()['calls']} calls so far)",
                     flush=True,
                 )
+                receipt_task_grade(
+                    chain,
+                    ARM_NAME,
+                    row["task_id"],
+                    row["task_pass"],
+                    row["reason"],
+                )
+                rows_file = args.out / "results.jsonl"
+                mode = "a" if rows_file.exists() else "w"
+                with rows_file.open(mode) as handle:
+                    handle.write(
+                        json.dumps({k: v for k, v in row.items() if k != "history"})
+                        + "\n"
+                    )
             rows.extend(family_rows)
     finally:
         cleanup_sandbox(sandbox)
 
+    receipts_verification = verify_receipt_chain(args.out / "receipts.json")
     rows_path = args.out / "results.jsonl"
-    rows_path.write_text(
-        "".join(
-            json.dumps({k: v for k, v in r.items() if k != "history"}) + "\n"
-            for r in rows
-        )
-    )
     passed = sum(1 for r in rows if r["task_pass"])
     summary = {
         "arm": ARM_NAME,
         "model": client.model,
         "base_url": client.base_url,
         "probes": args.probes,
+        "receipts_ok": receipts_verification["ok"],
         "model_calls": client.manifest_fields()["calls"],
         "wall_s": round(time.time() - started, 1),
         "passed": passed,

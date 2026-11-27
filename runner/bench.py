@@ -33,7 +33,7 @@ import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BENCH_DIR / "runner"))
@@ -41,6 +41,12 @@ sys.path.insert(0, str(BENCH_DIR / "harness"))
 sys.path.insert(0, str(BENCH_DIR))
 
 from harness.budget import Budget  # noqa: E402  (one definition, shared with the arms)
+from harness.keys import (  # noqa: E402
+    default_provider_id,
+    load_providers,
+    resolve_api_key,
+)
+from harness.model import ModelClient  # noqa: E402
 
 # The hard rule (world/gates.py): a world that cannot be verified does not run.
 from world.gates import check_world, report as gate_report  # noqa: E402
@@ -134,7 +140,9 @@ class ArmReport:
         return {k: round(v, 3) for k, v in totals.items()}
 
 
-ArmRunner = Callable[[Dict[str, Any], Budget, Path], Attempt]
+# An arm entrypoint receives the shared client as its fourth argument - bench
+# builds one and every arm gets the same one (parity).
+ArmRunner = Callable[[Dict[str, Any], Budget, Path, Any], Attempt]
 
 
 # --------------------------------------------------------------------------- grading
@@ -327,6 +335,7 @@ def run_arm(
     budget: Budget,
     sandbox: Path,
     prompt_of: Callable[[Dict[str, Any]], str],
+    client: Any = None,
 ) -> ArmReport:
     """Run one arm over every task, then grade it. Budget is enforced here, not trusted."""
     findings = leakage_check(manifest, sandbox, gold, prompt_of)
@@ -337,7 +346,7 @@ def run_arm(
 
     report = ArmReport(arm=arm)
     for task in manifest["tasks"]:
-        attempt = runner(task, budget, sandbox)
+        attempt = runner(task, budget, sandbox, client)
         attempt.arm = arm
         attempt.overflowed = (
             attempt.steps > budget.max_steps
@@ -443,7 +452,9 @@ def _self_test_prompt(_task: Dict[str, Any]) -> str:
     return "Complete the task described."
 
 
-def _stub_arm(task: Dict[str, Any], budget: Budget, _sandbox: Path) -> Attempt:
+def _stub_arm(
+    task: Dict[str, Any], budget: Budget, _sandbox: Path, _client: Any = None
+) -> Attempt:
     """TEST DOUBLE - not a harness. Consumes a fixed slice of budget and answers nothing,
     so the grader must score it 0. If this ever scores above 0, grading is broken."""
     return Attempt(
@@ -536,6 +547,36 @@ def self_test() -> int:
 # ----------------------------------------------------------------------------- main
 
 
+def build_client(
+    providers_path: Path, provider_id: Optional[str] = None
+) -> ModelClient:
+    """One client for every arm: one endpoint, one model, one key resolution.
+
+    Parity is structural, not a promise. The arms never construct a client -
+    bench builds exactly one and hands the SAME object to every arm, so "same
+    model" cannot drift per arm the way it did when a launcher set one arm's
+    output-token allowance to 4x the other's.
+    """
+    providers = load_providers(providers_path)
+    provider_id = provider_id or default_provider_id(providers_path)
+    if not provider_id or provider_id not in providers:
+        raise BenchmarkError(
+            f"no default provider in {providers_path}: pass one explicitly"
+        )
+    provider = providers[provider_id]
+    if not provider.default_model:
+        raise BenchmarkError(
+            f"provider {provider_id!r} names no default model: 'whatever the "
+            "default is' is how arms diverge"
+        )
+    api_key = resolve_api_key(provider)
+    return ModelClient(
+        base_url=provider.base_url,
+        api_key=api_key,
+        model=provider.default_model,
+    )
+
+
 def enforce_world_gates(world_dir: Path, sandbox_dir: Path, gold_path: Path) -> None:
     """The hard rule: a world that cannot be verified in code does not run.
 
@@ -603,6 +644,16 @@ def main() -> int:
         return 1
 
     args.out.mkdir(parents=True, exist_ok=True)
+    # ONE client for every arm, built once: same endpoint, same model, same key
+    # resolution. An arm never constructs its own client.
+    try:
+        client = build_client(BENCH_DIR / "spec" / "providers.json")
+    except (
+        Exception
+    ) as exc:  # noqa: BLE001 - any key/env failure aborts the run, loudly
+        print(f"BENCHMARK INVALID: model client: {exc}", file=sys.stderr)
+        return 2
+
     reports: List[ArmReport] = []
     for arm_name, entrypoint in spec["arms"].items():
         try:
@@ -615,6 +666,7 @@ def main() -> int:
                 budget,
                 args.sandbox,
                 _self_test_prompt,
+                client,
             )
             reports.append(report)
         except BenchmarkError as exc:

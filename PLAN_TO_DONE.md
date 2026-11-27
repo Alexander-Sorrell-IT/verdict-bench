@@ -112,7 +112,7 @@ be spent debugging the report script.
 tested.** The analogous unknown is the whole phase: the graded path has never run
 a full world end-to-end, and the relay has been live-verified once, on one task.
 
-## Phase G — operator mode (2 h; last)
+## Phase G — DONE (fb9c3b4; smoke run green over the auto-started relay)
 
 | # | Step | Verify | Est |
 |---|---|---|---|

@@ -196,6 +196,17 @@ def mcnemar(
         1 for t in shared if not a_map[t].task_pass and not b_map[t].task_pass
     )
     discordant = a_only + b_only
+    # Zero discordant pairs is not a degenerate test: it is PERFECT agreement,
+    # and the honest p-value is 1.0 (no difference detectable). Raising here
+    # would fail exactly the runs that agree completely.
+    if discordant == 0:
+        return McNemarResult(
+            a_only=a_only,
+            b_only=b_only,
+            both_pass=both,
+            both_fail=neither,
+            p_value=1.0,
+        )
     return McNemarResult(
         a_only=a_only,
         b_only=b_only,

@@ -95,6 +95,25 @@ def test_the_report_states_what_the_gates_cannot_check():
     )
 
 
+def test_perfect_agreement_is_reported_not_raised():
+    """Two arms passing the same tasks is not a degenerate comparison - it is
+    agreement, and p = 1.0. Raising here would fail exactly the runs that
+    agree completely (the operator smoke hit this)."""
+    from stats import Attempt, mcnemar
+
+    shared = [
+        Attempt("A", "T-1", "f", True, 1, 1),
+        Attempt("B", "T-1", "f", True, 1, 1),
+        Attempt("A", "T-2", "f", True, 1, 1),
+        Attempt("B", "T-2", "f", True, 1, 1),
+    ]
+    a = [x for x in shared if x.arm == "A"]
+    b = [x for x in shared if x.arm == "B"]
+    result = mcnemar(a, b)
+    assert result.discordant == 0
+    assert result.p_value == 1.0
+
+
 def test_a_dry_run_reports_pass_and_its_model_route(monkeypatch, tmp_path):
     """The World-2 path: stubbed arms solve everything, the rows carry the
     route, the report discloses it and the verdict is PASS."""

@@ -419,11 +419,24 @@ def verdict(report: ArmReport, target: float) -> str:
 
 
 def load_arms_spec(path: Path) -> Dict[str, Any]:
-    """Spec maps arm name -> 'module:function' plus its shared budget."""
+    """Spec maps arm name -> 'module:function' plus its shared budget.
+
+    The parity invariant (G.2): an arm entry is an entrypoint STRING and
+    nothing else. A per-arm model, provider, budget or token allowance is an
+    override, and the spec is refused - that is exactly the asymmetry that let
+    one arm run with 4x the other's output allowance.
+    """
     spec = json.loads(path.read_text())
     for required in ("arms", "budget"):
         if required not in spec:
             raise BenchmarkError(f"arms spec missing {required!r}: {path}")
+    for arm, entry in spec["arms"].items():
+        if not isinstance(entry, str) or ":" not in entry:
+            raise BenchmarkError(
+                f"arm {arm!r} must be a 'module:function' entrypoint: "
+                f"{entry!r} is a per-arm override, and the spec must name ONE "
+                "model+provider and one budget for every arm"
+            )
     return spec
 
 
@@ -549,7 +562,10 @@ def self_test() -> int:
 
 
 def build_client(
-    providers_path: Path, provider_id: Optional[str] = None
+    providers_path: Path,
+    provider_id: Optional[str] = None,
+    model: str = "",
+    base_url: str = "",
 ) -> ModelClient:
     """One client for every arm: one endpoint, one model, one key resolution.
 
@@ -565,16 +581,20 @@ def build_client(
             f"no default provider in {providers_path}: pass one explicitly"
         )
     provider = providers[provider_id]
-    if not provider.default_model:
+    endpoint = base_url or provider.base_url
+    if not endpoint:
+        raise BenchmarkError(f"provider {provider_id!r} names no base_url")
+    api_key = resolve_api_key(provider)
+    model_id = model or provider.default_model
+    if not model_id:
         raise BenchmarkError(
             f"provider {provider_id!r} names no default model: 'whatever the "
             "default is' is how arms diverge"
         )
-    api_key = resolve_api_key(provider)
     return ModelClient(
-        base_url=provider.base_url,
+        base_url=endpoint,
         api_key=api_key,
-        model=provider.default_model,
+        model=model_id,
     )
 
 

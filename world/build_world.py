@@ -21,7 +21,7 @@ import hashlib
 import json
 import random
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -208,6 +208,18 @@ def _create_world_files(world: Dict[str, Any], seed: int) -> None:
                 (FILES_DIR / f"{task_id}.env").write_text(f"{var}={val}\n")
 
 
+def _world_timestamp(seed: int) -> str:
+    """The world's timestamp, derived from the seed - never the clock.
+
+    A rebuild must reproduce every artifact byte-for-byte: E.1 freezes the world
+    hash and aborts on change, so a benign rebuild that moved created_at would
+    abort the very run it was built for.
+    """
+    epoch = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    offset = timedelta(seconds=seed % (365 * 24 * 3600))
+    return (epoch + offset).isoformat() + "Z"
+
+
 def generate_tasks(seed: int = 20261120, num_tasks: int = 25) -> List[Dict[str, Any]]:
     """The task list, pure: no files written, nothing sampled. Deterministic for
     a (seed, num_tasks) pair, which is what makes the split in runner/split.py
@@ -222,7 +234,7 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
         "seed": seed,
         "num_tasks": num_tasks,
         "families": TASK_FAMILIES,
-        "created_at": datetime.now(timezone.utc).isoformat() + "Z",
+        "created_at": _world_timestamp(seed),
         "tasks": generate_tasks(seed=seed, num_tasks=num_tasks),
     }
 
@@ -268,7 +280,7 @@ def build_world(seed: int = 20261120, num_tasks: int = 25) -> Dict[str, Any]:
         "num_tasks": num_tasks,
         "manifest_hash": hashlib.sha256(world_manifest_path.read_bytes()).hexdigest(),
         "gold_hash": hashlib.sha256(GOLD_PATH.read_bytes()).hexdigest(),
-        "frozen_at": datetime.now(timezone.utc).isoformat() + "Z",
+        "frozen_at": _world_timestamp(seed),
     }
     FREEZE_PATH.write_text(json.dumps(freeze, indent=2))
 

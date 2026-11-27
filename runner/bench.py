@@ -47,6 +47,7 @@ from harness.keys import (  # noqa: E402
     resolve_api_key,
 )
 from harness.model import ModelClient  # noqa: E402
+from freeze import FreezeError, enforce_freeze  # noqa: E402
 
 # The hard rule (world/gates.py): a world that cannot be verified does not run.
 from world.gates import check_world, report as gate_report  # noqa: E402
@@ -642,6 +643,15 @@ def main() -> int:
     except BenchmarkError as exc:
         print(f"RUN REFUSED: {exc}", file=sys.stderr)
         return 1
+
+    # E.1: the freeze. The world and the split are hashed before any arm runs;
+    # a change under the run aborts it.
+    try:
+        freeze_outcome = enforce_freeze(BENCH_DIR / "spec" / "split.json")
+    except FreezeError as exc:
+        print(f"RUN REFUSED: {exc}", file=sys.stderr)
+        return 1
+    print(f"Freeze: {freeze_outcome['status']}")
 
     args.out.mkdir(parents=True, exist_ok=True)
     # ONE client for every arm, built once: same endpoint, same model, same key

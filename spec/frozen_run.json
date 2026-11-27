@@ -1,0 +1,9 @@
+{
+  "gold_sha256": "90dc21c75f8a326af50d2169e5a51247f9a3f36fc1347c08a7af6a4cea439289",
+  "manifest_sha256": "5ce25396f4fb4edcf27924a5e7379daf7c5b83184aa5e6258c0b46e1e8dcc957",
+  "rule_version": "1",
+  "split_sha256": "dfe0eb42f1122c62a69166f9b0c16fb3eea0a603bca9430276d121b011de9567",
+  "world_files_sha256": "a14db707e45570ed479e7939245d041e8b2e818ea0d84b309728732799c0d32d",
+  "world_freeze_sha256": "5b67e2e3ca6f116be473cb79bfa37678d29357c790793ad02e5cb4ce430d43a6",
+  "world_id_dir": "/media/phantomcore/AI_DRIVE/take home test/verdict-bench/world"
+}

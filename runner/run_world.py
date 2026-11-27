@@ -47,6 +47,7 @@ from receipts import (  # noqa: E402
     verify_hashed_file,
     verify_receipt_chain,
 )
+from freeze import FreezeError, enforce_freeze  # noqa: E402
 from world.gates import check_world, report as gate_report  # noqa: E402
 from world.paths import GOLD_FILENAME, PRIVATE_DIRNAME  # noqa: E402
 
@@ -353,6 +354,15 @@ def main() -> None:
     if blocking:
         print(f"RUN REFUSED: world gates blocking: {', '.join(blocking)}")
         sys.exit(1)
+
+    # E.1: the world and the split are frozen before any arm runs. A change
+    # under the run aborts it - not a warning, an abort.
+    try:
+        freeze_outcome = enforce_freeze(Path(args.spec_split))
+    except FreezeError as exc:
+        print(f"RUN REFUSED: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Freeze: {freeze_outcome['status']}")
 
     # Run each arm - same split, same world, same prompt path (parity is
     # structural); the only difference between arms is the arm itself. ONE

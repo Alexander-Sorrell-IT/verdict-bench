@@ -5,6 +5,7 @@ return an empty answer when it cannot find one. A synthesized placeholder is exa
 scored 25/25 and graded 0/25.
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -210,3 +211,42 @@ def test_task_prompt_contains_no_answer_formula(sandbox):
         "config-parsing",
     ):
         assert leak not in prompt
+
+
+def test_an_answer_is_written_as_the_deliverable_the_gates_check(sandbox):
+    """The AF2 completion gate checks the FILE, not the reply. E.2 run 2 found it
+    firing on all 25 GATED attempts while nothing ever wrote that file - a gate
+    that cannot pass is decoration. The arm now writes its answer, so the gate
+    verifies a real artifact."""
+    client = StubClient(["cat data.conf", 'ANSWER: {"value": "value_2022"}'])
+    attempt = run_task(
+        _task(),
+        client,
+        sandbox,
+        engine=None,
+        arm="MINIMAL",
+        budget=BUDGET,
+    )
+    assert attempt.stopped_reason == "answered"
+    deliverable = sandbox / "deliverable.json"
+    assert deliverable.is_file()
+    assert json.loads(deliverable.read_text()) == {"value": "value_2022"}
+
+
+def test_the_stop_gate_passes_once_the_deliverable_exists(sandbox):
+    """The gate itself, on a delivered attempt: no block, and the recorded
+    stopped_reason is not clobbered by it."""
+    from harness.gates import GateEngine, default_gates
+
+    client = StubClient(["cat data.conf", 'ANSWER: {"value": "value_2022"}'])
+    attempt = run_task(
+        _task(),
+        client,
+        sandbox,
+        engine=GateEngine(default_gates()),
+        arm="GATED",
+        budget=BUDGET,
+    )
+    assert attempt.answer == '{"value": "value_2022"}'
+    assert attempt.stopped_reason == "answered"
+    assert not [b for b in attempt.gate_blocks if b.startswith("stop/")]

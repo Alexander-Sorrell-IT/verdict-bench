@@ -244,6 +244,14 @@ def run_task(
         if answer is not None:
             attempt.answer = answer
             attempt.stopped_reason = "answered"
+            # The answer is only a real deliverable once it is WRITTEN: the AF2
+            # completion gate checks the file, not the reply, because a
+            # placeholder string satisfies "non-empty" while a written,
+            # parseable, key-carrying file does not. The gate ran on every
+            # GATED attempt of E.2 run 2 and could never pass, because nothing
+            # ever wrote this file.
+            deliverable = sandbox / "deliverable.json"
+            deliverable.write_text(answer)
             break
 
         command = _extract_command(reply)

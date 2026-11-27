@@ -34,7 +34,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -211,16 +210,21 @@ def execute_command(
 
 
 class HypothesisCycle:
-    """One hypothesis -> test -> correction cycle."""
+    """One hypothesis -> test -> correction cycle.
+
+    The record is deterministic: no timestamps. Same inputs -> same log, byte
+    for byte, which is what makes a recovery comparison reproducible. WHEN
+    things happened lives in the rows (wall_s) and the receipt chain, not here.
+    """
 
     def __init__(self, hypothesis: str, task_id: str):
         self.hypothesis = hypothesis
         self.task_id = task_id
         self.tests: List[Dict[str, Any]] = []
         self.corrections: List[Dict[str, str]] = []
+        self.adversary: List[Dict[str, Any]] = []
         self.resolved = False
         self.final_answer: Optional[str] = None
-        self.created_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_test(
         self, action: str, result: Dict[str, Any], matches_expectation: bool
@@ -228,25 +232,23 @@ class HypothesisCycle:
         self.tests.append(
             {
                 "action": action,
-                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
                 "result": result,
                 "matches_expectation": matches_expectation,
             }
         )
 
     def add_correction(self, correction: str) -> None:
-        self.corrections.append(
-            {
-                "correction": correction,
-                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
-            }
-        )
+        self.corrections.append({"correction": correction})
+
+    def add_adversary_event(self, event: Dict[str, Any]) -> None:
+        """Harness-authored injection, recorded apart from model behaviour so an
+        audit can tell the two apart."""
+        self.adversary.append(event)
 
     def to_markdown(self) -> str:
         lines: List[str] = []
         lines.append(f"## Hypothesis: {self.hypothesis}")
         lines.append(f"Task: {self.task_id}")
-        lines.append(f"Created: {self.created_at}")
         lines.append("")
         for i, test in enumerate(self.tests, 1):
             lines.append(f"### Test {i}: {test['action']}")
@@ -254,6 +256,11 @@ class HypothesisCycle:
             lines.append(f"Exit: {test['result'].get('exit_code')}")
             lines.append(f"Out: {test['result'].get('stdout', '')[:300]}")
             lines.append(f"Err: {test['result'].get('stderr', '')[:300]}")
+            lines.append("")
+        if self.adversary:
+            lines.append("### Adversary (harness-authored)")
+            for event in self.adversary:
+                lines.append(f"- {event['detail']}")
             lines.append("")
         if self.corrections:
             lines.append("### Corrections")
@@ -283,7 +290,6 @@ class HypothesisEngine:
         lines: List[str] = []
         lines.append("# Hypothesis Log")
         lines.append("")
-        lines.append(f"Generated: {datetime.now(timezone.utc).isoformat() + 'Z'}")
         lines.append(f"Total cycles: {len(self.cycles)}")
         lines.append(f"Resolved: {sum(1 for c in self.cycles if c.resolved)}")
         lines.append("")
@@ -388,8 +394,9 @@ def run_hypothesis_task(
     engine: HypothesisEngine,
     max_attempts: int = 5,
     discovery_text: str = "",
-    client: Optional[ModelClient] = None,
+    client: Optional[Any] = None,
     sandbox: Optional[Path] = None,
+    adversary: Optional[Any] = None,
 ) -> Optional[str]:
     """Run one task: propose -> execute -> evaluate, until an ANSWER or exhaustion.
 
@@ -424,6 +431,10 @@ def run_hypothesis_task(
                 continue
 
             result = execute_command(cmd, cwd=sandbox)
+            if adversary is not None:
+                result = adversary.maybe_inject(task_id, attempt, cmd, result)
+                if result.get("adversary_injected"):
+                    cycle.add_adversary_event({"detail": adversary.detail(task_id)})
             cycle.add_test(cmd, result, result["ok"] and bool(result["stdout"].strip()))
 
             try:

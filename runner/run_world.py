@@ -39,6 +39,7 @@ from hypothesis import (  # noqa: E402
     relay_client,
     run_hypothesis_task,
 )
+from harness.adversary import Adversary  # noqa: E402
 from verify import verify_deliverable, write_verification_report  # noqa: E402
 from grader import grade_task_output  # noqa: E402
 from world.gates import check_world, report as gate_report  # noqa: E402
@@ -75,6 +76,7 @@ def run_arm(
     split: Dict[str, Any] | None = None,
     only_split: str | None = None,
     client: Any = None,
+    adversary: Any = None,
 ) -> Dict[str, Any]:
     """Run one arm over its split share of the tasks, graded against withheld gold.
 
@@ -134,6 +136,7 @@ def run_arm(
             discovery_text=discovery_text,
             client=client,
             sandbox=sandbox,
+            adversary=adversary,
         )
         elapsed = time.perf_counter() - start
 
@@ -172,6 +175,7 @@ def run_arm(
                 "answer": answer or "",
                 "answer_empty": not bool(answer and answer.strip()),
                 "split": split_member,
+                "adversary": adversary.event_for(task_id) if adversary else None,
                 "self_verify": vreport.get("overall", "fail"),
                 "reason": grade.get("reason", ""),
             }
@@ -278,6 +282,13 @@ def main() -> None:
         help="debug route: local Ollama instead of the graded relay model",
     )
     parser.add_argument(
+        "--adversary-seed",
+        type=int,
+        default=None,
+        help="inject a deterministic contradiction at attempt 2 of every task "
+        "(the recovery measurement; omit for the clean control run)",
+    )
+    parser.add_argument(
         "--build-world", action="store_true", help="Build the world before running"
     )
     parser.add_argument("--seed", type=int, default=20261120, help="World seed")
@@ -318,10 +329,16 @@ def main() -> None:
     # client for every arm: the graded relay route unless --local is debugging.
     split = _load_split(Path(args.spec_split))
     client = local_client() if args.local else relay_client()
+    adversary = Adversary(args.adversary_seed) if args.adversary_seed else None
     print(
         f"Model route: {client.model} via {client.base_url}"
         f"{' (LOCAL DEBUG)' if args.local else ''}"
     )
+    if adversary is not None:
+        print(
+            f"Adversary: deterministic contradiction at attempt "
+            f"{adversary.at_attempt + 1} of every task (seed {adversary.seed})"
+        )
     all_results: List[Dict[str, Any]] = []
     for arm in args.arms:
         print(f"\n{'='*60}")
@@ -334,6 +351,7 @@ def main() -> None:
             split=split,
             only_split=args.only_split,
             client=client,
+            adversary=adversary,
         )
         all_results.append(result)
 

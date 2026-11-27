@@ -28,7 +28,6 @@ from typing import Any, Dict, List
 # Add verdict-bench to path
 VERDICT_BENCH_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(VERDICT_BENCH_DIR / "runner"))
-sys.path.insert(0, str(VERDICT_BENCH_DIR / "world"))
 sys.path.insert(0, str(VERDICT_BENCH_DIR))
 
 from discovery import run_discovery  # noqa: E402
@@ -42,7 +41,7 @@ from hypothesis import (  # noqa: E402
 )
 from harness.adversary import Adversary, measure_recovery  # noqa: E402
 from verify import verify_deliverable, write_verification_report  # noqa: E402
-from grader import grade_task_output  # noqa: E402
+from world.grader import grade_task_output  # noqa: E402
 from receipts import (  # noqa: E402
     ReceiptChain,
     verify_hashed_file,

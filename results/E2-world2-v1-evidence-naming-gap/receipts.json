@@ -1,0 +1,517 @@
+{
+  "salt": "verdict-bench:v1",
+  "rows": [
+    {
+      "seq": 0,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "base_url": "http://127.0.0.1:8787/v1",
+      "budget": "{\"max_model_calls\": 200, \"max_steps\": 400, \"max_wall_seconds\": 2700.0}",
+      "gold_sha256": "90dc21c75f8a326af50d2169e5a51247f9a3f36fc1347c08a7af6a4cea439289",
+      "kind": "run_manifest",
+      "manifest_sha256": "34d4b4c359b5e43cbe4b41ebcc757e49918127d0aedd34f990b6e6d8f6e0ad18",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "provider": "nvidia",
+      "hash": "18b1dc67412d0d2aadf949607506bc88ce8f65e0b73a37a4fd8734208092ec88"
+    },
+    {
+      "seq": 1,
+      "prev_hash": "18b1dc67412d0d2aadf949607506bc88ce8f65e0b73a37a4fd8734208092ec88",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-000",
+      "hash": "248a9e7600ba22ab51b754d9cd81d9570da8d487b2ead60a1319440aa9058028"
+    },
+    {
+      "seq": 2,
+      "prev_hash": "248a9e7600ba22ab51b754d9cd81d9570da8d487b2ead60a1319440aa9058028",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-001",
+      "hash": "148ea521057f7125302f8798eb3b64e25851edb0854dee47cf15bcde8ebee1ed"
+    },
+    {
+      "seq": 3,
+      "prev_hash": "148ea521057f7125302f8798eb3b64e25851edb0854dee47cf15bcde8ebee1ed",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-002",
+      "hash": "944395c7c220a346a13c54ee8af71edd1834dab26e7759837528c19104ff779d"
+    },
+    {
+      "seq": 4,
+      "prev_hash": "944395c7c220a346a13c54ee8af71edd1834dab26e7759837528c19104ff779d",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-003",
+      "hash": "0aec643090d0ef4d05823a3a51925696787bebe1ab5272416f59c71b7c6a63a2"
+    },
+    {
+      "seq": 5,
+      "prev_hash": "0aec643090d0ef4d05823a3a51925696787bebe1ab5272416f59c71b7c6a63a2",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-004",
+      "hash": "1a1d8a5be4c98f6d58f336b85790bdb9840c1210235d4121b0098b419b3184be"
+    },
+    {
+      "seq": 6,
+      "prev_hash": "1a1d8a5be4c98f6d58f336b85790bdb9840c1210235d4121b0098b419b3184be",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-005",
+      "hash": "1e91bea28f8b127d6f62b72abfe96568de84416b1dc6aceed394058cceac46ec"
+    },
+    {
+      "seq": 7,
+      "prev_hash": "1e91bea28f8b127d6f62b72abfe96568de84416b1dc6aceed394058cceac46ec",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-006",
+      "hash": "9309e95061398b434d1b30b4c660d989160c4fc68aa0e91806f81e7c28283ec1"
+    },
+    {
+      "seq": 8,
+      "prev_hash": "9309e95061398b434d1b30b4c660d989160c4fc68aa0e91806f81e7c28283ec1",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-007",
+      "hash": "e83696b5e14e92e75f10ecacffdcec75148038e9acd12204eae560259de491e0"
+    },
+    {
+      "seq": 9,
+      "prev_hash": "e83696b5e14e92e75f10ecacffdcec75148038e9acd12204eae560259de491e0",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-008",
+      "hash": "e8959b0dabe47ba8c150dd15f0c026c7e385a6c0b2d176be0d0f4e90d6c19564"
+    },
+    {
+      "seq": 10,
+      "prev_hash": "e8959b0dabe47ba8c150dd15f0c026c7e385a6c0b2d176be0d0f4e90d6c19564",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-009",
+      "hash": "b4719eb5d0c4d3f42efdde9e8ccf979b9a71441399ccd35985d807203587ea0e"
+    },
+    {
+      "seq": 11,
+      "prev_hash": "b4719eb5d0c4d3f42efdde9e8ccf979b9a71441399ccd35985d807203587ea0e",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-010",
+      "hash": "1db93b0d0182c6326df84dade029c5212727b7ec0869b21b1b7c4ab51cfdad6e"
+    },
+    {
+      "seq": 12,
+      "prev_hash": "1db93b0d0182c6326df84dade029c5212727b7ec0869b21b1b7c4ab51cfdad6e",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-011",
+      "hash": "f254346366d5d3b8317eb86654062e5bfdafcc0d1495dda99c5feae269e0b9dc"
+    },
+    {
+      "seq": 13,
+      "prev_hash": "f254346366d5d3b8317eb86654062e5bfdafcc0d1495dda99c5feae269e0b9dc",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-012",
+      "hash": "fa1bd033455df13bd723782d14bf0c245cf79bbb911607ecdcdc79675c15e454"
+    },
+    {
+      "seq": 14,
+      "prev_hash": "fa1bd033455df13bd723782d14bf0c245cf79bbb911607ecdcdc79675c15e454",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-013",
+      "hash": "bef05e34ce2a507f10b3ced965e0be53d95ecdef92e53a99cf78013a1e752a08"
+    },
+    {
+      "seq": 15,
+      "prev_hash": "bef05e34ce2a507f10b3ced965e0be53d95ecdef92e53a99cf78013a1e752a08",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-014",
+      "hash": "83de221678c90afae5eb39aeb0c7d85c9b76079569181eaf986b84fd6173787e"
+    },
+    {
+      "seq": 16,
+      "prev_hash": "83de221678c90afae5eb39aeb0c7d85c9b76079569181eaf986b84fd6173787e",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-015",
+      "hash": "27b945911e586efd69dce21d5a53218495d3a1b0add1d44b153186e70930f7b7"
+    },
+    {
+      "seq": 17,
+      "prev_hash": "27b945911e586efd69dce21d5a53218495d3a1b0add1d44b153186e70930f7b7",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-016",
+      "hash": "14ddce3e608efc3c59032c016fd46ded1f36839262cd22fc2ec74e9e8cbf02da"
+    },
+    {
+      "seq": 18,
+      "prev_hash": "14ddce3e608efc3c59032c016fd46ded1f36839262cd22fc2ec74e9e8cbf02da",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-017",
+      "hash": "8fe200b591c73002eedb1ffb1a12afdedb1bc05695631a796ae63c0d5520f173"
+    },
+    {
+      "seq": 19,
+      "prev_hash": "8fe200b591c73002eedb1ffb1a12afdedb1bc05695631a796ae63c0d5520f173",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-018",
+      "hash": "1ae7d3666917f82579758a241af834b3597ce2decc5b19c82831db613643a162"
+    },
+    {
+      "seq": 20,
+      "prev_hash": "1ae7d3666917f82579758a241af834b3597ce2decc5b19c82831db613643a162",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-019",
+      "hash": "7aea05c31b45592be0151ab45f9f4d4181360e6318ee588c1582310a5b70fcc0"
+    },
+    {
+      "seq": 21,
+      "prev_hash": "7aea05c31b45592be0151ab45f9f4d4181360e6318ee588c1582310a5b70fcc0",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-020",
+      "hash": "255242d811f5ec25eaf97326545197d7bae9d9839269c2290cff665b85cb6142"
+    },
+    {
+      "seq": 22,
+      "prev_hash": "255242d811f5ec25eaf97326545197d7bae9d9839269c2290cff665b85cb6142",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-021",
+      "hash": "db144eaa3c796b1f1c269cf3331a5422428845434c9c9750b07c56180e5d7fbc"
+    },
+    {
+      "seq": 23,
+      "prev_hash": "db144eaa3c796b1f1c269cf3331a5422428845434c9c9750b07c56180e5d7fbc",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-022",
+      "hash": "ba64c219cdfef022f13fb85a98d74884d17cf46b6a9b92369ad7e3c73f9726a0"
+    },
+    {
+      "seq": 24,
+      "prev_hash": "ba64c219cdfef022f13fb85a98d74884d17cf46b6a9b92369ad7e3c73f9726a0",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-023",
+      "hash": "08b5283cf051ff6a5f0617d9e9bca95845679877392cebb6c1642675c2c02cae"
+    },
+    {
+      "seq": 25,
+      "prev_hash": "08b5283cf051ff6a5f0617d9e9bca95845679877392cebb6c1642675c2c02cae",
+      "arm": "MINIMAL",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-024",
+      "hash": "57fc3f8f21e2225b07a082bec4e12e8cee4d42827cf186f1ca8ef598795c41e9"
+    },
+    {
+      "seq": 26,
+      "prev_hash": "57fc3f8f21e2225b07a082bec4e12e8cee4d42827cf186f1ca8ef598795c41e9",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-000",
+      "hash": "e3a7ca96c30c9154e1a0268fb7af8f769edb93f5eb66eae9bb143efb74fae92b"
+    },
+    {
+      "seq": 27,
+      "prev_hash": "e3a7ca96c30c9154e1a0268fb7af8f769edb93f5eb66eae9bb143efb74fae92b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-001",
+      "hash": "d2dd8fda4d85fe75df6b75b502ab6d283bc2dc990898676adf660f13d8fad0cc"
+    },
+    {
+      "seq": 28,
+      "prev_hash": "d2dd8fda4d85fe75df6b75b502ab6d283bc2dc990898676adf660f13d8fad0cc",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-002",
+      "hash": "385610f767b7969848d1b13ee789940214668ba641265ae5a8a1d00d90afa219"
+    },
+    {
+      "seq": 29,
+      "prev_hash": "385610f767b7969848d1b13ee789940214668ba641265ae5a8a1d00d90afa219",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-003",
+      "hash": "c122ae1b8b856901e0943bdad9d43d4504fa787232d9ee57fd830662d32b7a41"
+    },
+    {
+      "seq": 30,
+      "prev_hash": "c122ae1b8b856901e0943bdad9d43d4504fa787232d9ee57fd830662d32b7a41",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-004",
+      "hash": "db915025d92d4cf368a265e9e3ae100a250e5f0962a3115ae938cdffffe43c6b"
+    },
+    {
+      "seq": 31,
+      "prev_hash": "db915025d92d4cf368a265e9e3ae100a250e5f0962a3115ae938cdffffe43c6b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-005",
+      "hash": "7a00e498f89b2a6930b26dd5e518aba1bd59304c1b381cd2b4bbf805cc091ba4"
+    },
+    {
+      "seq": 32,
+      "prev_hash": "7a00e498f89b2a6930b26dd5e518aba1bd59304c1b381cd2b4bbf805cc091ba4",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-006",
+      "hash": "847d48eef4658050b10c976c6bfcdde1979bc22876067228d8cc77d4069306fe"
+    },
+    {
+      "seq": 33,
+      "prev_hash": "847d48eef4658050b10c976c6bfcdde1979bc22876067228d8cc77d4069306fe",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-007",
+      "hash": "556a65873b133d7219089060080e7482cfba28adcc2054254ff733285b93fb3a"
+    },
+    {
+      "seq": 34,
+      "prev_hash": "556a65873b133d7219089060080e7482cfba28adcc2054254ff733285b93fb3a",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-008",
+      "hash": "98e0113c9201c3514498da89ecc37117f8c47f3ec93382423d74ce614e0b22ff"
+    },
+    {
+      "seq": 35,
+      "prev_hash": "98e0113c9201c3514498da89ecc37117f8c47f3ec93382423d74ce614e0b22ff",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-009",
+      "hash": "2bbf17f66158cd67e6e27192c93a4c7993d349f8939afaabc614393388c2022b"
+    },
+    {
+      "seq": 36,
+      "prev_hash": "2bbf17f66158cd67e6e27192c93a4c7993d349f8939afaabc614393388c2022b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-010",
+      "hash": "ba0ff023748e3c382e115d26854346eaf2cf42a05806cd372328cf74749c4b3b"
+    },
+    {
+      "seq": 37,
+      "prev_hash": "ba0ff023748e3c382e115d26854346eaf2cf42a05806cd372328cf74749c4b3b",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-011",
+      "hash": "56cf3e7f49c75183d1d437755f78890676509d9a61f0c93c63bd8b9162190a46"
+    },
+    {
+      "seq": 38,
+      "prev_hash": "56cf3e7f49c75183d1d437755f78890676509d9a61f0c93c63bd8b9162190a46",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-012",
+      "hash": "89c6f4a286b6cd50958f17e21dac39eb35dd7a5992890f309e1473c2e7d3a9a5"
+    },
+    {
+      "seq": 39,
+      "prev_hash": "89c6f4a286b6cd50958f17e21dac39eb35dd7a5992890f309e1473c2e7d3a9a5",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-013",
+      "hash": "567af6bae3639a2db9478488b6a962c74a3c9affb822ebf766d8c88927b9c17d"
+    },
+    {
+      "seq": 40,
+      "prev_hash": "567af6bae3639a2db9478488b6a962c74a3c9affb822ebf766d8c88927b9c17d",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-014",
+      "hash": "1f77fe106bf06afd70c073e280fdc96af0997b270ec382cba1e9148e7e911bad"
+    },
+    {
+      "seq": 41,
+      "prev_hash": "1f77fe106bf06afd70c073e280fdc96af0997b270ec382cba1e9148e7e911bad",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-015",
+      "hash": "32545b15eea8d8be82797e35393b146f47d2d6f470f01e754ad66676943e7067"
+    },
+    {
+      "seq": 42,
+      "prev_hash": "32545b15eea8d8be82797e35393b146f47d2d6f470f01e754ad66676943e7067",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-016",
+      "hash": "896e8b4f02b00ec7fc3642a8b8c8e1413e3226fc0e99d7d6ece47129c4249cb4"
+    },
+    {
+      "seq": 43,
+      "prev_hash": "896e8b4f02b00ec7fc3642a8b8c8e1413e3226fc0e99d7d6ece47129c4249cb4",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-017",
+      "hash": "817c9406ade2f0a8790963a16f47dfd35d0333b7fc7d01c66ede4ef1ee3b14df"
+    },
+    {
+      "seq": 44,
+      "prev_hash": "817c9406ade2f0a8790963a16f47dfd35d0333b7fc7d01c66ede4ef1ee3b14df",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-018",
+      "hash": "645c64e0c5cfcc5a7a61b14b22b34817d59da54d204f65feef1e7acd52eccbe4"
+    },
+    {
+      "seq": 45,
+      "prev_hash": "645c64e0c5cfcc5a7a61b14b22b34817d59da54d204f65feef1e7acd52eccbe4",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-019",
+      "hash": "1fafd7e94d0da018607a3cc6af06ac00f546c7be77e4a935daa0748899152bec"
+    },
+    {
+      "seq": 46,
+      "prev_hash": "1fafd7e94d0da018607a3cc6af06ac00f546c7be77e4a935daa0748899152bec",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-020",
+      "hash": "c0defad2bc205a1a17d9067e0838ad57e0e836d39d91b364bb390f9b359870ea"
+    },
+    {
+      "seq": 47,
+      "prev_hash": "c0defad2bc205a1a17d9067e0838ad57e0e836d39d91b364bb390f9b359870ea",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-021",
+      "hash": "29f547dc7d6f1d8cb1b47a152582b7d90ee1149c570f412ea7fbd27ed04e5543"
+    },
+    {
+      "seq": 48,
+      "prev_hash": "29f547dc7d6f1d8cb1b47a152582b7d90ee1149c570f412ea7fbd27ed04e5543",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-022",
+      "hash": "900ab780c3bbb7b2c8b74370b1a61edb4dde60706d25030e94af0b9267866767"
+    },
+    {
+      "seq": 49,
+      "prev_hash": "900ab780c3bbb7b2c8b74370b1a61edb4dde60706d25030e94af0b9267866767",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-023",
+      "hash": "16ee82c22edc9ac481fb8a6f3e25506e57a5c23870c56b1885dcf20171992cd9"
+    },
+    {
+      "seq": 50,
+      "prev_hash": "16ee82c22edc9ac481fb8a6f3e25506e57a5c23870c56b1885dcf20171992cd9",
+      "arm": "GATED",
+      "kind": "task_grade",
+      "passed": "false",
+      "reason": "gold values present 0/1",
+      "task_id": "W2-024",
+      "hash": "c6d2fd321937d7bb1a506a1db24f75e42fad1f81e45ff39723bcf0cae352d998"
+    }
+  ]
+}

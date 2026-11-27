@@ -156,6 +156,29 @@ def run_config(
     )
 
 
+def _retry_write(operation: Any, what: str, attempts: int = 5) -> Any:
+    """One write, retried through a transient disk error.
+
+    An external drive hiccup cost this run 12 minutes once: the EIO arrived
+    mid-flush and took the in-memory arm with it. The disk is usually back
+    within seconds, so the write waits for it instead of the run dying.
+    """
+    delay = 1.0
+    last_error: Optional[OSError] = None
+    for attempt in range(attempts):
+        try:
+            return operation()
+        except OSError as exc:
+            last_error = exc
+            print(
+                f"  [disk] {what} failed ({exc}); retry {attempt + 1}/{attempts}",
+                flush=True,
+            )
+            time.sleep(delay)
+            delay = min(delay * 2, 30.0)
+    raise last_error  # type: ignore[misc]
+
+
 def _run_once(
     provider: str,
     model: str,
@@ -217,7 +240,7 @@ def _run_once(
     # Rows are written per task, not at the end: a run that is killed mid-way
     # (a timeout, a Ctrl-C) leaves its evidence on disk, the same way the
     # receipt chain already does.
-    with rows_path.open("w") as rows_handle:
+    with _retry_write(lambda: rows_path.open("w"), "open rows") as rows_handle:
         for arm_name, entrypoint in spec["arms"].items():
             runner = resolve_runner(entrypoint)
             report = run_arm(
@@ -246,8 +269,11 @@ def _run_once(
                     "reason": grade.reason,
                 }
                 rows.append(row)
-                rows_handle.write(json.dumps(row, sort_keys=True) + "\n")
-                rows_handle.flush()
+                line = json.dumps(row, sort_keys=True) + "\n"
+                _retry_write(
+                    lambda: (rows_handle.write(line), rows_handle.flush()),
+                    f"row {attempt.task_id}",
+                )
                 receipt_task_grade(
                     chain, arm_name, attempt.task_id, grade.passed, grade.reason
                 )

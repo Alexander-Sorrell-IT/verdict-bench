@@ -1,0 +1,90 @@
+
+WORLD GATES
+  [PASS] structure:world_files-exists            
+  [PASS] structure:world_files-populated         
+  [PASS] structure:manifest-exists               
+  [PASS] structure:manifest-parses               
+  [PASS] structure:gold-exists                   
+  [PASS] separation:gold-outside-sandbox         
+  [PASS] separation:gold-outside-public-tree     
+  [PASS] separation:no-gold-filename:gold        
+  [PASS] separation:no-gold-filename:freeze      
+  [PASS] separation:no-gold-filename:answer_key  
+  [PASS] separation:no-gold-filename:solution    
+  [PASS] leak:no-answer-key-in-public-tree       
+  [PASS] manifest:no-leaked-keys                 
+  [PASS] manifest:task-clean:W2-000              
+  [PASS] prompt:no-answer-formula:W2-000         
+  [PASS] manifest:task-clean:W2-001              
+  [PASS] prompt:no-answer-formula:W2-001         
+  [PASS] manifest:task-clean:W2-002              
+  [PASS] prompt:no-answer-formula:W2-002         
+  [PASS] manifest:task-clean:W2-003              
+  [PASS] prompt:no-answer-formula:W2-003         
+  [PASS] manifest:task-clean:W2-004              
+  [PASS] prompt:no-answer-formula:W2-004         
+  [PASS] manifest:task-clean:W2-005              
+  [PASS] prompt:no-answer-formula:W2-005         
+  [PASS] manifest:task-clean:W2-006              
+  [PASS] prompt:no-answer-formula:W2-006         
+  [PASS] manifest:task-clean:W2-007              
+  [PASS] prompt:no-answer-formula:W2-007         
+  [PASS] manifest:task-clean:W2-008              
+  [PASS] prompt:no-answer-formula:W2-008         
+  [PASS] manifest:task-clean:W2-009              
+  [PASS] prompt:no-answer-formula:W2-009         
+  [PASS] manifest:task-clean:W2-010              
+  [PASS] prompt:no-answer-formula:W2-010         
+  [PASS] manifest:task-clean:W2-011              
+  [PASS] prompt:no-answer-formula:W2-011         
+  [PASS] manifest:task-clean:W2-012              
+  [PASS] prompt:no-answer-formula:W2-012         
+  [PASS] manifest:task-clean:W2-013              
+  [PASS] prompt:no-answer-formula:W2-013         
+  [PASS] manifest:task-clean:W2-014              
+  [PASS] prompt:no-answer-formula:W2-014         
+  [PASS] manifest:task-clean:W2-015              
+  [PASS] prompt:no-answer-formula:W2-015         
+  [PASS] manifest:task-clean:W2-016              
+  [PASS] prompt:no-answer-formula:W2-016         
+  [PASS] manifest:task-clean:W2-017              
+  [PASS] prompt:no-answer-formula:W2-017         
+  [PASS] manifest:task-clean:W2-018              
+  [PASS] prompt:no-answer-formula:W2-018         
+  [PASS] manifest:task-clean:W2-019              
+  [PASS] prompt:no-answer-formula:W2-019         
+  [PASS] manifest:task-clean:W2-020              
+  [PASS] prompt:no-answer-formula:W2-020         
+  [PASS] manifest:task-clean:W2-021              
+  [PASS] prompt:no-answer-formula:W2-021         
+  [PASS] manifest:task-clean:W2-022              
+  [PASS] prompt:no-answer-formula:W2-022         
+  [PASS] manifest:task-clean:W2-023              
+  [PASS] prompt:no-answer-formula:W2-023         
+  [PASS] manifest:task-clean:W2-024              
+  [PASS] prompt:no-answer-formula:W2-024         
+  [PASS] grader:takes-gold-as-argument           
+  [PASS] grader:no-llm-judge                     
+  [PASS] solver:exists                           
+  [PASS] solver:no-llm                           
+  [PASS] solver:not-a-stub                       
+
+  COVERAGE - what these gates CANNOT check:
+    - that the tasks are actually hard (a trivially guessable world passes every gate)
+    - that the answer formulas are absent from the MODEL's context window at runtime
+    - that an arm cannot reach gold through the model, a tool, or the OS
+    - that the gold is CORRECT - a verifiable wrong answer is still wrong
+    - that the run was fair (budget, load, retries) - that is bench.py's job
+
+  68/68 gates passed
+  Structurally sound - NOT a claim that the benchmark is fair.
+{
+  "status": "ran",
+  "provider": "nvidia",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "base_url": "http://127.0.0.1:8787/v1",
+  "verdict": "REJECT",
+  "rows": "results/E2-world2/results.jsonl",
+  "receipts": "results/E2-world2/receipts.json",
+  "receipts_ok": true
+}

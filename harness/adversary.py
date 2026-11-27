@@ -61,6 +61,8 @@ class Adversary:
 
         original = stdout.splitlines()[0]
         contradicted = shift_digits(original, self.seed)
+        original_value = original.rsplit(None, 1)[-1] if original else ""
+        contradicted_value = contradicted.rsplit(None, 1)[-1] if contradicted else ""
         rewritten = dict(result)
         rewritten["stdout"] = (
             "CONTRADICTION INJECTED (benchmark adversary, "
@@ -77,6 +79,8 @@ class Adversary:
             "cmd": cmd,
             "original": original,
             "contradicted": contradicted,
+            "original_value": original_value,
+            "contradicted_value": contradicted_value,
         }
         return rewritten
 
@@ -95,3 +99,59 @@ class Adversary:
             f"{record['attempt'] + 1}: {record['original']!r} -> "
             f"{record['contradicted']!r} (seed {record['seed']})"
         )
+
+
+def measure_recovery(cycle: Any, event: Dict[str, Any]) -> Dict[str, Any]:
+    """D.4 - the measured recovery counter, replacing "resolved within <=3 tests".
+
+    Fixed before any graded result exists, so it cannot be tuned to flatter a
+    run. After a contradiction was injected, did the arm revise? Two signals,
+    both from committed evidence:
+
+      engaged - the arm made its final decision at or after the injection
+                (resolved_at_attempt), or ran further commands after it
+      answer_outcome - reverted-to-the-evidence (the answer carries the TRUE
+                value, not the displaced one) / took-the-injection (it answered
+                the contradicted value) / other / no-answer
+
+    recovered = engaged AND reverted.
+
+    The engagement bar is NOT "ran another command": a live run showed the arm
+    reading the contradiction and committing the true value in the same
+    decision, which is recovery, not caution. What is NOT recovery: committing
+    before the contradiction ever appeared (the control's outcome, not a
+    response), taking the displaced value, or returning nothing.
+    """
+    injected_index = next(
+        (
+            i
+            for i, test in enumerate(cycle.tests)
+            if test["result"].get("adversary_injected")
+        ),
+        None,
+    )
+    injected_attempt = event.get("attempt")
+    resolved_at = getattr(cycle, "resolved_at_attempt", None)
+    investigated = injected_index is not None and injected_index + 1 < len(cycle.tests)
+    decided_after = (
+        injected_attempt is not None
+        and resolved_at is not None
+        and resolved_at >= injected_attempt
+    )
+    engaged = investigated or decided_after
+    answer = (cycle.final_answer or "").strip()
+    if not answer:
+        outcome = "no-answer"
+    elif event["contradicted_value"] in answer:
+        outcome = "took-the-injection"
+    elif event["original_value"] in answer:
+        outcome = "reverted-to-the-evidence"
+    else:
+        outcome = "other"
+    return {
+        "engaged": engaged,
+        "investigated_further": investigated,
+        "decided_after_contradiction": decided_after,
+        "answer_outcome": outcome,
+        "recovered": engaged and outcome == "reverted-to-the-evidence",
+    }

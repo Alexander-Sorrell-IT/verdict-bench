@@ -225,6 +225,7 @@ class HypothesisCycle:
         self.adversary: List[Dict[str, Any]] = []
         self.resolved = False
         self.final_answer: Optional[str] = None
+        self.resolved_at_attempt: Optional[int] = None
 
     def add_test(
         self, action: str, result: Dict[str, Any], matches_expectation: bool
@@ -451,6 +452,7 @@ def run_hypothesis_task(
             if answer is not None:
                 cycle.resolved = True
                 cycle.final_answer = answer
+                cycle.resolved_at_attempt = attempt
                 return answer
 
             if "COMMAND:" in decision:

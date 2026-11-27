@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -39,9 +40,14 @@ from hypothesis import (  # noqa: E402
     relay_client,
     run_hypothesis_task,
 )
-from harness.adversary import Adversary  # noqa: E402
+from harness.adversary import Adversary, measure_recovery  # noqa: E402
 from verify import verify_deliverable, write_verification_report  # noqa: E402
 from grader import grade_task_output  # noqa: E402
+from receipts import (  # noqa: E402
+    ReceiptChain,
+    verify_hashed_file,
+    verify_receipt_chain,
+)
 from world.gates import check_world, report as gate_report  # noqa: E402
 from world.paths import GOLD_FILENAME, PRIVATE_DIRNAME  # noqa: E402
 
@@ -99,6 +105,8 @@ def run_arm(
     task_results: List[Dict[str, Any]] = []
     discovery_path = output_dir / "discovery.md"
     hypothesis_log_path = output_dir / "hypothesis_log.md"
+    receipts_path = output_dir / "receipts.json"
+    chain = ReceiptChain(receipts_path)
 
     # The arm reads a SANDBOX: world_files and the manifest copied out of the
     # world dir. Discovery and every command run inside it - the withheld
@@ -141,7 +149,9 @@ def run_arm(
         elapsed = time.perf_counter() - start
 
         # Phase 3: Self-verification - recorded as evidence, never as the verdict.
-        deliverable_path = Path(f"deliverable_{task_id}.txt")
+        # In the SANDBOX, not the working tree: the self-verify runs where the
+        # arm worked, a tree that provably holds no gold (D.5).
+        deliverable_path = sandbox / f"deliverable_{task_id}.txt"
         if answer:
             deliverable_path.write_text(answer)
 
@@ -176,6 +186,11 @@ def run_arm(
                 "answer_empty": not bool(answer and answer.strip()),
                 "split": split_member,
                 "adversary": adversary.event_for(task_id) if adversary else None,
+                "recovery": (
+                    measure_recovery(engine.cycles[-1], adversary.event_for(task_id))
+                    if adversary and adversary.event_for(task_id) and engine.cycles
+                    else None
+                ),
                 "self_verify": vreport.get("overall", "fail"),
                 "reason": grade.get("reason", ""),
             }
@@ -185,9 +200,21 @@ def run_arm(
         if deliverable_path.exists():
             deliverable_path.unlink()
 
-    # Write hypothesis log
-    engine.write_log()
+        # The run log is written per task and RECEIPTED per task (D.6): the
+        # chain proves the receipts, verify_hashed_file proves the log - an edit
+        # after the run, human or otherwise, fails the audit.
+        log_path = engine.write_log()
+        chain.append(
+            {
+                "kind": "hypothesis_log",
+                "task_id": task_id,
+                "path": str(log_path),
+                "sha256": hashlib.sha256(log_path.read_bytes()).hexdigest(),
+            }
+        )
+
     cleanup_sandbox(sandbox)
+    receipts_verification = verify_receipt_chain(receipts_path)
 
     # One row per task, appended - the same shape for every arm, so stats.py
     # reads runs from any arm without conversion.
@@ -203,6 +230,8 @@ def run_arm(
         "split_rule": (split or {}).get("rule", "none"),
         "total_tasks": len(task_results),
         "passed": sum(1 for r in task_results if r["task_pass"]),
+        "log_audit": verify_hashed_file(receipts_path, hypothesis_log_path),
+        "receipts": receipts_verification,
         "task_results": task_results,
         "recovery_rate": engine.recovery_rate(),
     }
@@ -366,10 +395,21 @@ def main() -> None:
     print("SUMMARY (hash-graded against withheld gold)")
     print(f"{'='*60}")
     for result in all_results:
-        print(
-            f"  {result['arm']}: {result['passed']}/{result['total_tasks']} "
-            f"passed ({result['recovery_rate']:.0%} recovery, legacy metric)"
+        injected = [r for r in result["task_results"] if r.get("adversary")]
+        recovered = sum(
+            1 for r in injected if (r.get("recovery") or {}).get("recovered")
         )
+        line = (
+            f"  {result['arm']}: {result['passed']}/"
+            f"{result['total_tasks']} passed (hash-graded)"
+        )
+        if injected:
+            line += (
+                f" | recovery {recovered}/{len(injected)} measured after "
+                "contradiction"
+            )
+        line += f" | legacy recovery_rate {result['recovery_rate']:.0%}"
+        print(line)
 
 
 if __name__ == "__main__":

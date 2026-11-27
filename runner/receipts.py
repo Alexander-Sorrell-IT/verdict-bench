@@ -178,6 +178,32 @@ def receipt_task_grade(
     )
 
 
+def verify_hashed_file(
+    chain_path: Path, path: Path, kind: str = "hypothesis_log"
+) -> Dict[str, Any]:
+    """Audit one run artifact against its last receipt.
+
+    The chain proves the receipt rows were not edited; this proves the ARTIFACT
+    was not edited after the run either. A synthetic "human note" appended to a
+    hypothesis log fails here - that is the human-intervention audit (D.6).
+    """
+    chain = json.loads(Path(chain_path).read_text())
+    rows = [r for r in chain["rows"] if r.get("kind") == kind]
+    matching = [r for r in rows if any(v == str(path) for v in r.values())]
+    if not matching:
+        return {"ok": False, "reason": f"no {kind} receipt for {path}"}
+    last = matching[-1]
+    recorded = last.get("sha256", "")
+    actual = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return {
+        "ok": recorded == actual,
+        "recorded": recorded,
+        "actual": actual,
+        "path": str(path),
+        "seq": last.get("seq"),
+    }
+
+
 def verify_receipt_chain(path: Path) -> Dict[str, Any]:
     """Offline verification entry point, safe to hand to an independent scorer."""
     return ReceiptChain(path).verify()

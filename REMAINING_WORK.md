@@ -29,7 +29,7 @@ python -m pytest -q -p no:hypothesispytest      # → 92 passed
 | `harness/gates.py` | 339 | 28 | 6 AF2 gates. **Ported from `CLI-Enforcement`'s architecture**; blocks the 25/25 placeholder as invalid JSON |
 | `harness/minimal_arm.py` | 364 | 15 | the arm. **Live-verified against nemotron-3-ultra-550b** → `{"value": "value_2022"}`, 3 steps, 3 calls, 6.4 s |
 | `harness/model.py` | 202 | — | one OpenAI-compatible client, relay-aware, key never logged |
-| `harness/keys.py` | 193 | 8 | **OmniCLI's exact precedence order**; loads an OmniCLI config unmodified |
+| `harness/keys.py` | — | 8 | **This repo's own** precedence (env_key -> alt_env_keys -> keys file -> loud error); standalone - any registry with the plain OpenAI-compatible shape loads |
 | `harness/budget.py` | — | — | one `Budget` definition shared by runner and arms; refuses missing fields |
 | `harness/filelens/` | 550 | 21 | vendored file tool, PolyForm notices intact |
 | `tests/` | — | **92 pass** | |

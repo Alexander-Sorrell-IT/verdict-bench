@@ -128,25 +128,24 @@ a full world end-to-end, and the relay has been live-verified once, on one task.
 40 commits from the plan's start, 190 tests, mypy clean on 50 files, clean-room
 green). What remains:
 
+Decision 2 RESOLVED 2026-11-27 (operator: "it all should be proven"): E runs.
+
 ```
-[YOUR DECISION: the run window]
-E.2  World-2 run, both arms, nemotron relay (2–4 h API)
-E.3  Harness² comparison (1–2 h API)
+E.2  World-2 run, both arms, nemotron relay   <-- EXECUTING NOW
+E.3  Harness² comparison
 E.5  void-and-rerun policy executed
 F    regenerate the report from the receipts (minutes)
-G.1–G.3 operator mode (~2 h)
+G    operator mode — done (fb9c3b4)
 ```
 
 Everything E needs is staged and tested: the world is frozen and refuses change,
 both runners refuse a blocked world, the arms share one relay client, the rows
 carry the model route and the answers, the sealed grader re-grades from gold,
 the report generates itself, and the recovery measurement is pre-registered.
-The only thing between here and the runs is your decision on the window.
 
 ## What needs you vs what I execute
 
-- **NEEDS YOU — decision 2, the Phase E run window.** Stage everything, then one
-  sitting (recommended), versus interleaving runs with the remaining build.
+- Decision 2 — **RESOLVED: E runs now** (operator, 2026-11-27).
 - **EXECUTING UNLESS YOU OBJECT — decision 1, freeze determinism**: derive the
   timestamps from the seed (B.6). No downside; a non-reproducible freeze would
   abort E.1 on a benign rebuild.

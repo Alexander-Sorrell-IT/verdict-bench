@@ -179,6 +179,33 @@ def _retry_write(operation: Any, what: str, attempts: int = 5) -> Any:
     raise last_error  # type: ignore[misc]
 
 
+def prompt_for(task: Dict[str, Any]) -> str:
+    """The prompt every arm sees for a task.
+
+    The manifest names each task's evidence file (the plan's design, and the
+    fix for the live run that catted the first file of the right shape). The
+    bench path must deliver it exactly as run_world does: without it an arm
+    sees 25 identical-description tasks and 25 files with no way to correlate
+    them, explores for confirmation it can never get, and scores zero while
+    having already read the right file.
+    """
+    description = task["description"]
+    evidence = task.get("evidence_file")
+    if evidence:
+        description += f"\n\nYour task's evidence file is world_files/{evidence}."
+    return description
+
+
+def task_for_arm(task: Dict[str, Any]) -> Dict[str, Any]:
+    """The task as the arm receives it: the description the prompt is built
+    from, with the evidence naming included. The manifest is public, so every
+    field of it may reach the model - the withheld parts are gold and rules,
+    not names."""
+    augmented = dict(task)
+    augmented["description"] = prompt_for(task)
+    return augmented
+
+
 def _run_once(
     provider: str,
     model: str,
@@ -209,6 +236,13 @@ def _run_once(
         BENCH_DIR / "spec" / "providers.json", provider, model, **client_kwargs
     )
     manifest = json.loads(Path(manifest_path).read_text())
+    # The arms receive the evidence naming in their task: without it they see
+    # 25 identical-description tasks and 25 files, read several, find
+    # conflicting values, and cannot decide which is theirs. The first E.2 run
+    # scored 0/25 exactly this way - the arm had already catted the right file
+    # and the right value twice before its attempts ran out.
+    manifest = dict(manifest)
+    manifest["tasks"] = [task_for_arm(t) for t in manifest["tasks"]]
     gold = json.loads(Path(gold_path).read_text())
     answers = gold.get("answers", gold)
     budget = bench.Budget(**spec["budget"])
@@ -250,7 +284,7 @@ def _run_once(
                 answers,
                 budget,
                 sandbox,
-                lambda task: task["description"],
+                prompt_for,
                 client,
             )
             for attempt, grade in zip(report.attempts, report.grades):
